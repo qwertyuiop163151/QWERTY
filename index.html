@@ -1,0 +1,1685 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P2P 文件传输</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js">
+    </script>
+    <style>
+        :root {
+            --bg: #f0f2f5;
+            --card-bg: #ffffff;
+            --primary: #4f6ef7;
+            --primary-hover: #3b54d4;
+            --text: #1a1a2e;
+            --text-secondary: #5a5a7a;
+            --border: #e2e6f0;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+            --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.06);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            background-image: radial-gradient(ellipse at 30% 20%, #e8ecff 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 80%, #e0f2fe 0%, transparent 60%),
+                radial-gradient(ellipse at 50% 50%, #f0f2f5 0%, transparent 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--text);
+            -webkit-tap-highlight-color: transparent;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 520px;
+            position: relative;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 32px 28px;
+            box-shadow: var(--shadow-md);
+            transition: all var(--transition);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #4f6ef7, #7c8cf8, #a78bfa, #4f6ef7);
+            background-size: 200% 100%;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%,
+            100% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .logo-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #4f6ef7, #7c8cf8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: #fff;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(79, 110, 247, 0.3);
+        }
+        .logo-text {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.3px;
+        }
+        .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 13px 24px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all var(--transition);
+            letter-spacing: 0.2px;
+            white-space: nowrap;
+            user-select: none;
+            -webkit-user-select: none;
+            outline: none;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn:active {
+            transform: scale(0.96);
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(79, 110, 247, 0.35);
+        }
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            box-shadow: 0 6px 20px rgba(79, 110, 247, 0.45);
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background: #f4f5fa;
+            color: var(--text);
+            border: 1.5px solid var(--border);
+        }
+        .btn-secondary:hover {
+            background: #eaecf4;
+            border-color: #c8cde0;
+        }
+        .btn-success {
+            background: var(--success);
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+        }
+        .btn-success:hover {
+            background: #059669;
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            border-radius: 30px;
+        }
+        .btn-block {
+            width: 100%;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .btn-row .btn {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin: 20px 0;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .input-group input {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 50px;
+            border: 1.5px solid var(--border);
+            font-size: 1rem;
+            outline: none;
+            transition: all var(--transition);
+            background: #f9fafb;
+            letter-spacing: 1px;
+            font-weight: 600;
+            text-align: center;
+            text-transform: uppercase;
+            color: var(--text);
+        }
+        .input-group input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 110, 247, 0.1);
+            background: #fff;
+        }
+        .input-group input::placeholder {
+            letter-spacing: 0;
+            font-weight: 400;
+            text-transform: none;
+            color: #b0b8c8;
+        }
+
+        .room-display {
+            background: #f8f9fd;
+            border-radius: var(--radius-sm);
+            padding: 20px;
+            text-align: center;
+            border: 1.5px dashed var(--border);
+            margin: 16px 0;
+        }
+        .room-code {
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: 4px;
+            color: var(--primary);
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', 'Monaco', monospace;
+            user-select: all;
+            -webkit-user-select: all;
+            word-break: break-all;
+        }
+        .room-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .qr-wrapper {
+            display: flex;
+            justify-content: center;
+            margin: 12px 0;
+        }
+        .qr-img {
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            max-width: 160px;
+            height: auto;
+            background: #fff;
+            padding: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius-sm);
+            padding: 36px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all var(--transition);
+            background: #fafbfd;
+            margin: 16px 0;
+            position: relative;
+        }
+        .drop-zone:hover,
+        .drop-zone.drag-over {
+            border-color: var(--primary);
+            background: #f5f6ff;
+            box-shadow: 0 0 0 4px rgba(79, 110, 247, 0.06);
+        }
+        .drop-zone-icon {
+            font-size: 42px;
+            margin-bottom: 8px;
+            display: block;
+        }
+        .drop-zone-text {
+            font-weight: 600;
+            color: var(--text);
+            font-size: 0.95rem;
+        }
+        .drop-zone-hint {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        .drop-zone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .file-list {
+            list-style: none;
+            margin: 12px 0;
+        }
+        .file-list li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: #f9fafb;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+            border: 1px solid var(--border);
+        }
+        .file-list .file-icon {
+            font-size: 1.4rem;
+            flex-shrink: 0;
+        }
+        .file-list .file-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .file-list .file-name {
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .file-list .file-size {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+        }
+        .file-list .file-remove {
+            cursor: pointer;
+            color: #999;
+            font-size: 1.2rem;
+            padding: 4px 8px;
+            border-radius: 50%;
+            transition: all var(--transition);
+            background: none;
+            border: none;
+            line-height: 1;
+        }
+        .file-list .file-remove:hover {
+            color: var(--danger);
+            background: #fef2f2;
+        }
+
+        .progress-wrapper {
+            margin: 16px 0;
+        }
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .progress-bar-outer {
+            height: 10px;
+            background: #eef0f6;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-bar-inner {
+            height: 100%;
+            background: linear-gradient(90deg, #4f6ef7, #7c8cf8);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        .progress-bar-inner.complete {
+            background: linear-gradient(90deg, #10b981, #34d399);
+        }
+        .speed-text {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+        .status-connecting {
+            background: #fffbeb;
+            color: #b45309;
+        }
+        .status-connected {
+            background: #ecfdf5;
+            color: #065f46;
+        }
+        .status-transferring {
+            background: #eff6ff;
+            color: #1e40af;
+        }
+        .status-complete {
+            background: #ecfdf5;
+            color: #065f46;
+        }
+        .status-error {
+            background: #fef2f2;
+            color: #991b1b;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse-dot 1.5s ease-in-out infinite;
+        }
+        .status-dot.connecting {
+            background: #f59e0b;
+        }
+        .status-dot.connected {
+            background: #10b981;
+            animation: none;
+        }
+        .status-dot.transferring {
+            background: #3b82f6;
+        }
+        @keyframes pulse-dot {
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.4;
+                transform: scale(0.7);
+            }
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            margin: 12px 0;
+            font-weight: 500;
+            line-height: 1.5;
+        }
+        .alert-info {
+            background: #eff6ff;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+        .alert-warning {
+            background: #fffbeb;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+        .alert-error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        .alert-success {
+            background: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.35s ease-out;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .text-center {
+            text-align: center;
+        }
+        .mt-2 {
+            margin-top: 8px;
+        }
+        .mt-3 {
+            margin-top: 16px;
+        }
+        .mb-2 {
+            margin-bottom: 8px;
+        }
+        .mb-3 {
+            margin-bottom: 16px;
+        }
+        .gap-2 {
+            gap: 8px;
+        }
+
+        .copy-tooltip {
+            position: relative;
+        }
+        .copy-tooltip::after {
+            content: '已复制!';
+            position: absolute;
+            top: -36px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1a2e;
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .copy-tooltip.copied::after {
+            opacity: 1;
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                padding: 24px 16px;
+                border-radius: 14px;
+            }
+            .room-code {
+                font-size: 1.6rem;
+                letter-spacing: 3px;
+            }
+            .btn {
+                padding: 12px 18px;
+                font-size: 0.9rem;
+            }
+            .btn-row {
+                flex-direction: column;
+            }
+            .btn-row .btn {
+                min-width: auto;
+            }
+            .input-group {
+                flex-direction: column;
+                gap: 8px;
+            }
+            .drop-zone {
+                padding: 24px 14px;
+            }
+            .qr-img {
+                max-width: 130px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card" id="mainCard">
+            <!-- Logo -->
+            <div class="logo">
+                <div class="logo-icon">📁</div>
+                <div class="logo-text">P2P 文件传输</div>
+            </div>
+            <p class="subtitle">安全、快速的端到端文件传输<br>文件直接在设备间传输，不经过任何服务器</p>
+
+            <!-- 初始状态：创建或加入 -->
+            <div id="screenIdle">
+                <div class="btn-row">
+                    <button class="btn btn-primary" onclick="createRoom()" id="btnCreate">
+                        ✨ 创建房间
+                    </button>
+                    <button class="btn btn-secondary" onclick="showJoinScreen()" id="btnJoin">
+                        🔗 加入房间
+                    </button>
+                </div>
+            </div>
+
+            <!-- 加入房间界面 -->
+            <div id="screenJoin" class="hidden fade-in">
+                <div class="input-group mb-3">
+                    <input type="text" id="roomCodeInput" placeholder="输入房间号" maxlength="8" autocomplete="off"
+                    autocorrect="off" autocapitalize="characters" spellcheck="false">
+                    <button class="btn btn-primary" onclick="joinRoom()" id="btnJoinConfirm">
+                        加入
+                    </button>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="goBackToIdle()" style="width:100%;">
+                    ← 返回
+                </button>
+                <div id="joinStatus" class="hidden"></div>
+            </div>
+
+            <!-- 创建房间后 -->
+            <div id="screenCreated" class="hidden fade-in">
+                <div class="room-display">
+                    <div class="room-label">房间号</div>
+                    <div class="room-code" id="roomCodeDisplay">------</div>
+                    <div class="mt-2" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+                        <button class="btn btn-secondary btn-sm copy-tooltip" id="btnCopyRoom" onclick="copyRoomCode()">
+                            📋 复制房间号
+                        </button>
+                        <button class="btn btn-secondary btn-sm" onclick="shareRoomLink()" id="btnShareLink">
+                            🔗 复制链接
+                        </button>
+                    </div>
+                </div>
+                <div class="qr-wrapper" id="qrWrapper">
+                    <img class="qr-img" id="qrImage" src="" alt="扫描加入房间" loading="lazy">
+                </div>
+                <p style="text-align:center;font-size:0.78rem;color:var(--text-secondary);">
+                    扫描二维码或输入房间号加入
+                </p>
+
+                <!-- 文件选择 -->
+                <div class="drop-zone" id="dropZone">
+                    <span class="drop-zone-icon">📎</span>
+                    <p class="drop-zone-text">点击或拖拽文件到此处</p>
+                    <p class="drop-zone-hint">支持任意类型文件，可选择多个</p>
+                    <input type="file" id="fileInput" multiple>
+                </div>
+                <ul class="file-list hidden" id="fileList"></ul>
+
+                <!-- 状态 -->
+                <div id="senderStatus" class="text-center mt-3">
+                    <span class="status-badge status-connecting">
+                        <span class="status-dot connecting"></span> 等待接收者连接...
+                    </span>
+                </div>
+                <div id="senderProgress" class="hidden">
+                    <div class="progress-wrapper">
+                        <div class="progress-header">
+                            <span id="senderProgressLabel">发送中...</span>
+                            <span class="speed-text" id="senderSpeed"></span>
+                        </div>
+                        <div class="progress-bar-outer">
+                            <div class="progress-bar-inner" id="senderProgressBar"></div>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn-secondary btn-sm btn-block mt-3" onclick="resetAll()">取消并重新开始</button>
+            </div>
+
+            <!-- 加入后（接收方） -->
+            <div id="screenReceiver" class="hidden fade-in">
+                <div id="receiverStatus" class="text-center">
+                    <span class="status-badge status-connecting">
+                        <span class="status-dot connecting"></span> 正在连接房间...
+                    </span>
+                </div>
+                <div id="receiverProgress" class="hidden">
+                    <div class="progress-wrapper">
+                        <div class="progress-header">
+                            <span id="receiverProgressLabel">接收中...</span>
+                            <span class="speed-text" id="receiverSpeed"></span>
+                        </div>
+                        <div class="progress-bar-outer">
+                            <div class="progress-bar-inner" id="receiverProgressBar"></div>
+                        </div>
+                    </div>
+                </div>
+                <div id="receiverFileInfo" class="hidden alert alert-info"></div>
+                <div id="receivedFiles" class="hidden">
+                    <p style="font-weight:600;margin-bottom:8px;">✅ 接收完成的文件：</p>
+                    <ul class="file-list" id="receivedFileList"></ul>
+                </div>
+                <button class="btn btn-secondary btn-sm btn-block mt-3" onclick="resetAll()">重新开始</button>
+            </div>
+
+            <!-- 全局提示 -->
+            <div id="globalAlert" class="hidden"></div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ============ 配置 ============
+            const PEER_SERVER = {
+                host: '0.peerjs.com',
+                port: 443,
+                secure: true,
+            };
+            const CHUNK_SIZE = 65536; // 64KB 每块
+            const ROOM_ID_LENGTH = 6;
+            const ROOM_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // 排除易混淆字符
+
+            // ============ 状态 ============
+            let peer = null;
+            let conn = null;
+            let appState = 'idle'; // idle | created | joining | receiver | connected
+            let roomId = '';
+            let selectedFiles = [];
+            let isSender = false;
+            let transferStartTime = 0;
+            let totalBytesSent = 0;
+            let totalBytesToSend = 0;
+            let totalBytesReceived = 0;
+            let totalBytesToReceive = 0;
+            let lastSpeedUpdate = 0;
+            let bytesSinceLastUpdate = 0;
+            let receivedFileChunks = {}; // { fileIndex: { chunks: [], totalChunks: N, name: '', size: 0, mime: '' } }
+            let receivedFileCount = 0;
+            let expectedFileCount = 0;
+            let transferComplete = false;
+
+            // ============ DOM 引用 ============
+            const $ = (sel) => document.querySelector(sel);
+            const $$ = (sel) => document.querySelectorAll(sel);
+
+            const screenIdle = $('#screenIdle');
+            const screenJoin = $('#screenJoin');
+            const screenCreated = $('#screenCreated');
+            const screenReceiver = $('#screenReceiver');
+            const roomCodeDisplay = $('#roomCodeDisplay');
+            const roomCodeInput = $('#roomCodeInput');
+            const fileInput = $('#fileInput');
+            const fileList = $('#fileList');
+            const dropZone = $('#dropZone');
+            const senderStatus = $('#senderStatus');
+            const senderProgress = $('#senderProgress');
+            const senderProgressBar = $('#senderProgressBar');
+            const senderProgressLabel = $('#senderProgressLabel');
+            const senderSpeed = $('#senderSpeed');
+            const receiverStatus = $('#receiverStatus');
+            const receiverProgress = $('#receiverProgress');
+            const receiverProgressBar = $('#receiverProgressBar');
+            const receiverProgressLabel = $('#receiverProgressLabel');
+            const receiverSpeed = $('#receiverSpeed');
+            const receiverFileInfo = $('#receiverFileInfo');
+            const receivedFiles = $('#receivedFiles');
+            const receivedFileList = $('#receivedFileList');
+            const globalAlert = $('#globalAlert');
+            const qrImage = $('#qrImage');
+            const qrWrapper = $('#qrWrapper');
+            const joinStatus = $('#joinStatus');
+            const btnCreate = $('#btnCreate');
+            const btnJoin = $('#btnJoin');
+            const btnJoinConfirm = $('#btnJoinConfirm');
+            const btnCopyRoom = $('#btnCopyRoom');
+
+            // ============ 工具函数 ============
+            function generateRoomId() {
+                let result = '';
+                const len = ROOM_CHARS.length;
+                for (let i = 0; i < ROOM_ID_LENGTH; i++) {
+                    result += ROOM_CHARS[Math.floor(Math.random() * len)];
+                }
+                return result;
+            }
+
+            function formatSize(bytes) {
+                if (bytes === 0) return '0 B';
+                const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(1024));
+                const size = (bytes / Math.pow(1024, i)).toFixed(i >= 2 ? 2 : 1);
+                return size + ' ' + units[i];
+            }
+
+            function formatSpeed(bytesPerSec) {
+                if (bytesPerSec < 1024) return bytesPerSec.toFixed(0) + ' B/s';
+                if (bytesPerSec < 1024 * 1024) return (bytesPerSec / 1024).toFixed(1) + ' KB/s';
+                return (bytesPerSec / (1024 * 1024)).toFixed(2) + ' MB/s';
+            }
+
+            function showAlert(message, type = 'info') {
+                globalAlert.className = 'alert alert-' + type + ' fade-in';
+                globalAlert.textContent = message;
+                globalAlert.classList.remove('hidden');
+                clearTimeout(globalAlert._timeout);
+                globalAlert._timeout = setTimeout(() => {
+                    globalAlert.classList.add('hidden');
+                }, 4000);
+            }
+
+            function hideAllScreens() {
+                [screenIdle, screenJoin, screenCreated, screenReceiver].forEach(s => s.classList.add('hidden'));
+            }
+
+            function showScreen(screen) {
+                hideAllScreens();
+                screen.classList.remove('hidden');
+                screen.classList.add('fade-in');
+            }
+
+            // ============ 清理 ============
+            function cleanupPeer() {
+                if (conn) {
+                    try { conn.close(); } catch (e) { /* ignore */ }
+                    conn = null;
+                }
+                if (peer) {
+                    try { peer.destroy(); } catch (e) { /* ignore */ }
+                    peer = null;
+                }
+            }
+
+            function resetAll() {
+                cleanupPeer();
+                appState = 'idle';
+                roomId = '';
+                selectedFiles = [];
+                isSender = false;
+                transferStartTime = 0;
+                totalBytesSent = 0;
+                totalBytesToSend = 0;
+                totalBytesReceived = 0;
+                totalBytesToReceive = 0;
+                lastSpeedUpdate = 0;
+                bytesSinceLastUpdate = 0;
+                receivedFileChunks = {};
+                receivedFileCount = 0;
+                expectedFileCount = 0;
+                transferComplete = false;
+                fileInput.value = '';
+                fileList.innerHTML = '';
+                fileList.classList.add('hidden');
+                senderProgress.classList.add('hidden');
+                senderProgressBar.style.width = '0%';
+                senderProgressBar.classList.remove('complete');
+                senderSpeed.textContent = '';
+                receiverProgress.classList.add('hidden');
+                receiverProgressBar.style.width = '0%';
+                receiverProgressBar.classList.remove('complete');
+                receiverSpeed.textContent = '';
+                receiverFileInfo.classList.add('hidden');
+                receivedFiles.classList.add('hidden');
+                receivedFileList.innerHTML = '';
+                joinStatus.classList.add('hidden');
+                joinStatus.innerHTML = '';
+                globalAlert.classList.add('hidden');
+                roomCodeInput.value = '';
+                btnCopyRoom.classList.remove('copied');
+                showScreen(screenIdle);
+            }
+
+            // ============ 创建房间 ============
+            function createRoom() {
+                resetAll();
+                roomId = generateRoomId();
+                isSender = true;
+                appState = 'created';
+                showScreen(screenCreated);
+                roomCodeDisplay.textContent = roomId;
+
+                // 生成二维码
+                const qrUrl =
+                    `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(roomId)}&bgcolor=ffffff&color=4f6ef7`;
+                qrImage.src = qrUrl;
+                qrWrapper.classList.remove('hidden');
+
+                // 初始化Peer
+                initPeer(roomId);
+                updateSenderStatus('connecting', '等待接收者连接...');
+                senderProgress.classList.add('hidden');
+                fileList.classList.add('hidden');
+                selectedFiles = [];
+                fileInput.value = '';
+            }
+
+            function initPeer(peerId) {
+                cleanupPeer();
+                peer = new Peer(peerId, {
+                    host: PEER_SERVER.host,
+                    port: PEER_SERVER.port,
+                    secure: PEER_SERVER.secure,
+                    debug: 0,
+                });
+
+                peer.on('open', (id) => {
+                    console.log('Peer opened with ID:', id);
+                    if (isSender) {
+                        updateSenderStatus('connecting', '等待接收者连接...');
+                    }
+                });
+
+                peer.on('connection', (incomingConn) => {
+                    console.log('Incoming connection from:', incomingConn.peer);
+                    if (isSender && appState === 'created') {
+                        conn = incomingConn;
+                        setupConnection();
+                        updateSenderStatus('connected', '接收者已连接！');
+                        // 如果已经选择了文件，自动开始发送
+                        if (selectedFiles.length > 0) {
+                            startSendingFiles();
+                        }
+                    }
+                });
+
+                peer.on('error', (err) => {
+                    console.error('Peer error:', err);
+                    if (err.type === 'unavailable-id') {
+                        // ID被占用，重新生成
+                        roomId = generateRoomId();
+                        roomCodeDisplay.textContent = roomId;
+                        const qrUrl =
+                            `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(roomId)}&bgcolor=ffffff&color=4f6ef7`;
+                        qrImage.src = qrUrl;
+                        initPeer(roomId);
+                        showAlert('房间号冲突，已重新生成', 'warning');
+                    } else if (err.type === 'peer-unavailable') {
+                        showAlert('无法连接到对方，请确认房间号正确', 'error');
+                        updateSenderStatus('error', '连接失败');
+                    } else if (err.type === 'network' || err.type === 'server-error') {
+                        showAlert('网络连接问题，请检查网络后重试', 'error');
+                    } else if (err.type === 'disconnected') {
+                        showAlert('连接断开，请重新创建房间', 'warning');
+                    }
+                });
+
+                peer.on('disconnected', () => {
+                    console.log('Peer disconnected');
+                    if (!transferComplete) {
+                        showAlert('信令服务器连接断开，尝试重连...', 'warning');
+                    }
+                    if (peer && !peer.destroyed) {
+                        try { peer.reconnect(); } catch (e) { /* ignore */ }
+                    }
+                });
+            }
+
+            // ============ 加入房间 ============
+            function showJoinScreen() {
+                resetAll();
+                appState = 'joining';
+                showScreen(screenJoin);
+                roomCodeInput.value = '';
+                roomCodeInput.focus();
+                joinStatus.classList.add('hidden');
+            }
+
+            function goBackToIdle() {
+                resetAll();
+                showScreen(screenIdle);
+            }
+
+            function joinRoom() {
+                const inputCode = roomCodeInput.value.trim().toUpperCase();
+                if (!inputCode || inputCode.length < 3) {
+                    showAlert('请输入有效的房间号', 'warning');
+                    return;
+                }
+                roomId = inputCode;
+                isSender = false;
+                appState = 'receiver';
+                showScreen(screenReceiver);
+                updateReceiverStatus('connecting', '正在连接房间...');
+                receiverProgress.classList.add('hidden');
+                receivedFiles.classList.add('hidden');
+                receivedFileList.innerHTML = '';
+                receivedFileChunks = {};
+                receivedFileCount = 0;
+                expectedFileCount = 0;
+                totalBytesReceived = 0;
+                totalBytesToReceive = 0;
+                transferComplete = false;
+
+                cleanupPeer();
+                peer = new Peer({
+                    host: PEER_SERVER.host,
+                    port: PEER_SERVER.port,
+                    secure: PEER_SERVER.secure,
+                    debug: 0,
+                });
+
+                peer.on('open', (myId) => {
+                    console.log('Joiner peer opened:', myId);
+                    // 连接到创建者
+                    conn = peer.connect(roomId, {
+                        reliable: true,
+                        serialization: 'binary',
+                    });
+                    setupConnection();
+                });
+
+                peer.on('error', (err) => {
+                    console.error('Joiner peer error:', err);
+                    if (err.type === 'peer-unavailable') {
+                        showAlert('找不到该房间，请确认房间号是否正确', 'error');
+                        updateReceiverStatus('error', '房间不存在');
+                    } else if (err.type === 'network' || err.type === 'server-error') {
+                        showAlert('网络连接问题，请检查网络后重试', 'error');
+                    } else if (err.type === 'disconnected') {
+                        showAlert('连接断开', 'warning');
+                    }
+                });
+
+                peer.on('disconnected', () => {
+                    if (!transferComplete && peer && !peer.destroyed) {
+                        try { peer.reconnect(); } catch (e) { /* ignore */ }
+                    }
+                });
+            }
+
+            // ============ 连接设置 ============
+            function setupConnection() {
+                if (!conn) return;
+
+                conn.on('open', () => {
+                    console.log('DataConnection opened');
+                    appState = 'connected';
+                    if (isSender) {
+                        updateSenderStatus('connected', '接收者已连接！选择文件后自动发送');
+                        if (selectedFiles.length > 0) {
+                            startSendingFiles();
+                        }
+                    } else {
+                        updateReceiverStatus('connected', '已连接，等待发送方传输文件...');
+                    }
+                });
+
+                conn.on('data', (data) => {
+                    handleIncomingData(data);
+                });
+
+                conn.on('close', () => {
+                    console.log('DataConnection closed');
+                    if (!transferComplete) {
+                        if (isSender) {
+                            updateSenderStatus('error', '连接已关闭');
+                        } else {
+                            updateReceiverStatus('error', '连接已关闭');
+                        }
+                        showAlert('连接已关闭', 'warning');
+                    }
+                });
+
+                conn.on('error', (err) => {
+                    console.error('DataConnection error:', err);
+                    showAlert('数据传输错误', 'error');
+                });
+            }
+
+            // ============ 数据处理 ============
+            function handleIncomingData(data) {
+                if (!(data instanceof ArrayBuffer)) {
+                    // 尝试转换
+                    if (data instanceof Uint8Array) {
+                        data = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+                    } else if (typeof data === 'object' && data !== null) {
+                        // PeerJS可能在binary模式下仍然发JSON（罕见情况）
+                        try {
+                            const str = JSON.stringify(data);
+                            const encoder = new TextEncoder();
+                            data = encoder.encode(str).buffer;
+                        } catch (e) {
+                            return;
+                        }
+                    } else {
+                        return;
+                    }
+                }
+
+                const view = new DataView(data);
+                if (data.byteLength < 1) return;
+                const msgType = view.getUint8(0);
+
+                if (msgType === 0) {
+                    // JSON元数据
+                    const jsonBytes = new Uint8Array(data, 1);
+                    const decoder = new TextDecoder();
+                    const jsonStr = decoder.decode(jsonBytes);
+                    try {
+                        const meta = JSON.parse(jsonStr);
+                        handleMetadata(meta);
+                    } catch (e) {
+                        console.error('Failed to parse metadata:', e);
+                    }
+                } else if (msgType === 1) {
+                    // 文件数据块
+                    if (data.byteLength < 13) return;
+                    const fileIndex = view.getUint32(1, false);
+                    const chunkIndex = view.getUint32(5, false);
+                    const totalChunks = view.getUint32(9, false);
+                    const chunkData = new Uint8Array(data, 13);
+
+                    handleFileChunk(fileIndex, chunkIndex, totalChunks, chunkData);
+                } else if (msgType === 2) {
+                    // 传输完成通知
+                    const jsonBytes = new Uint8Array(data, 1);
+                    const decoder = new TextDecoder();
+                    const jsonStr = decoder.decode(jsonBytes);
+                    try {
+                        const completeInfo = JSON.parse(jsonStr);
+                        handleTransferComplete(completeInfo);
+                    } catch (e) {
+                        console.error('Failed to parse complete info:', e);
+                    }
+                }
+            }
+
+            function handleMetadata(meta) {
+                if (isSender) return; // 发送方不应收到元数据
+                expectedFileCount = meta.files ? meta.files.length : 0;
+                totalBytesToReceive = meta.totalSize || 0;
+                receivedFileChunks = {};
+                receivedFileCount = 0;
+                totalBytesReceived = 0;
+                transferStartTime = Date.now();
+                lastSpeedUpdate = Date.now();
+                bytesSinceLastUpdate = 0;
+                transferComplete = false;
+
+                // 初始化接收结构
+                if (meta.files) {
+                    meta.files.forEach((f, i) => {
+                        receivedFileChunks[i] = {
+                            chunks: new Array(f.totalChunks || 1),
+                            totalChunks: f.totalChunks || 1,
+                            name: f.name || 'unknown_file',
+                            size: f.size || 0,
+                            mime: f.type || 'application/octet-stream',
+                            receivedChunks: 0,
+                        };
+                    });
+                }
+
+                updateReceiverStatus('transferring', `正在接收 ${expectedFileCount} 个文件...`);
+                receiverProgress.classList.remove('hidden');
+                receiverFileInfo.classList.remove('hidden');
+                receiverFileInfo.className = 'alert alert-info';
+                const fileNames = meta.files.map(f => f.name).join(', ');
+                receiverFileInfo.textContent = `📥 接收文件：${fileNames}（共 ${formatSize(meta.totalSize || 0)}）`;
+                receivedFiles.classList.add('hidden');
+                updateReceiverProgress(0);
+            }
+
+            function handleFileChunk(fileIndex, chunkIndex, totalChunks, chunkData) {
+                if (isSender) return;
+                if (!receivedFileChunks[fileIndex]) {
+                    // 可能元数据还没到，先存储
+                    if (!receivedFileChunks[fileIndex]) {
+                        receivedFileChunks[fileIndex] = {
+                            chunks: new Array(totalChunks),
+                            totalChunks: totalChunks,
+                            name: `file_${fileIndex}`,
+                            size: 0,
+                            mime: 'application/octet-stream',
+                            receivedChunks: 0,
+                        };
+                    }
+                }
+                const fileInfo = receivedFileChunks[fileIndex];
+                if (fileInfo.totalChunks < totalChunks) {
+                    // 更新总块数
+                    const newChunks = new Array(totalChunks);
+                    for (let i = 0; i < fileInfo.chunks.length; i++) {
+                        newChunks[i] = fileInfo.chunks[i];
+                    }
+                    fileInfo.chunks = newChunks;
+                    fileInfo.totalChunks = totalChunks;
+                }
+                if (!fileInfo.chunks[chunkIndex]) {
+                    fileInfo.chunks[chunkIndex] = chunkData;
+                    fileInfo.receivedChunks++;
+                    totalBytesReceived += chunkData.byteLength;
+                }
+
+                // 更新进度
+                const now = Date.now();
+                const elapsed = (now - lastSpeedUpdate) / 1000;
+                bytesSinceLastUpdate += chunkData.byteLength;
+                if (elapsed >= 1.0) {
+                    const speed = bytesSinceLastUpdate / elapsed;
+                    receiverSpeed.textContent = formatSpeed(speed);
+                    bytesSinceLastUpdate = 0;
+                    lastSpeedUpdate = now;
+                }
+                if (totalBytesToReceive > 0) {
+                    const progress = Math.min(100, Math.round((totalBytesReceived / totalBytesToReceive) * 100));
+                    updateReceiverProgress(progress);
+                }
+
+                // 检查单文件是否完成
+                if (fileInfo.receivedChunks >= fileInfo.totalChunks) {
+                    assembleAndDownloadFile(fileIndex);
+                }
+            }
+
+            function handleTransferComplete(completeInfo) {
+                if (isSender) return;
+                transferComplete = true;
+                updateReceiverStatus('complete', '传输完成！');
+                receiverProgressBar.style.width = '100%';
+                receiverProgressBar.classList.add('complete');
+                receiverSpeed.textContent = '';
+                receiverFileInfo.className = 'alert alert-success';
+                receiverFileInfo.textContent = '✅ 所有文件传输完成！';
+                receivedFiles.classList.remove('hidden');
+                showAlert('文件传输完成！', 'success');
+            }
+
+            function assembleAndDownloadFile(fileIndex) {
+                const fileInfo = receivedFileChunks[fileIndex];
+                if (!fileInfo || fileInfo._assembled) return;
+                fileInfo._assembled = true;
+
+                // 组装文件
+                const totalLength = fileInfo.chunks.reduce((sum, chunk) => sum + (chunk ? chunk.byteLength : 0), 0);
+                const assembled = new Uint8Array(totalLength);
+                let offset = 0;
+                for (let i = 0; i < fileInfo.totalChunks; i++) {
+                    if (fileInfo.chunks[i]) {
+                        assembled.set(fileInfo.chunks[i], offset);
+                        offset += fileInfo.chunks[i].byteLength;
+                    }
+                }
+
+                const blob = new Blob([assembled], { type: fileInfo.mime });
+                const url = URL.createObjectURL(blob);
+
+                // 添加到已接收文件列表
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span class="file-icon">📄</span>
+                    <div class="file-info">
+                        <div class="file-name">${escapeHtml(fileInfo.name)}</div>
+                        <div class="file-size">${formatSize(fileInfo.size || totalLength)}</div>
+                    </div>
+                    <button class="btn btn-success btn-sm" onclick="downloadFile('${url.replace(/'/g, "\\'")}', '${escapeHtml(fileInfo.name).replace(/'/g, "\\'")}')">
+                        ⬇ 下载
+                    </button>
+                `;
+                receivedFileList.appendChild(li);
+                receivedFiles.classList.remove('hidden');
+
+                // 自动下载
+                autoDownload(url, fileInfo.name);
+
+                receivedFileCount++;
+                if (expectedFileCount > 0 && receivedFileCount >= expectedFileCount) {
+                    transferComplete = true;
+                    updateReceiverStatus('complete', '全部接收完成！');
+                    receiverProgressBar.style.width = '100%';
+                    receiverProgressBar.classList.add('complete');
+                    receiverSpeed.textContent = '';
+                    receiverFileInfo.className = 'alert alert-success';
+                    receiverFileInfo.textContent = '✅ 所有文件传输完成！';
+                    showAlert('全部文件接收完成！', 'success');
+                }
+            }
+
+            function autoDownload(url, filename) {
+                try {
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    a.style.display = 'none';
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => {
+                        document.body.removeChild(a);
+                    }, 100);
+                } catch (e) {
+                    console.log('Auto download failed, user can use manual download button');
+                }
+            }
+
+            function escapeHtml(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            // 全局下载函数
+            window.downloadFile = function(url, filename) {
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                }, 100);
+            };
+
+            // ============ 发送文件 ============
+            function startSendingFiles() {
+                if (!conn || !isSender || selectedFiles.length === 0) return;
+                if (appState !== 'connected' && appState !== 'created') return;
+                appState = 'connected';
+                transferComplete = false;
+                totalBytesSent = 0;
+                totalBytesToSend = selectedFiles.reduce((sum, f) => sum + f.size, 0);
+                transferStartTime = Date.now();
+                lastSpeedUpdate = Date.now();
+                bytesSinceLastUpdate = 0;
+
+                updateSenderStatus('transferring', '正在发送文件...');
+                senderProgress.classList.remove('hidden');
+                senderProgressBar.style.width = '0%';
+                senderProgressBar.classList.remove('complete');
+                senderSpeed.textContent = '';
+
+                // 发送元数据
+                const filesMeta = selectedFiles.map((f, i) => ({
+                    name: f.name,
+                    size: f.size,
+                    type: f.type || 'application/octet-stream',
+                    totalChunks: Math.ceil(f.size / CHUNK_SIZE),
+                }));
+                const meta = {
+                    type: 'meta',
+                    files: filesMeta,
+                    totalSize: totalBytesToSend,
+                    fileCount: selectedFiles.length,
+                };
+                sendBinaryMessage(0, JSON.stringify(meta));
+
+                // 延迟一点发送文件数据，确保元数据先到达
+                setTimeout(() => {
+                    sendAllFiles(0);
+                }, 200);
+            }
+
+            function sendAllFiles(fileIndex) {
+                if (fileIndex >= selectedFiles.length) {
+                    // 所有文件发送完成
+                    sendBinaryMessage(2, JSON.stringify({ type: 'complete', fileCount: selectedFiles.length }));
+                    transferComplete = true;
+                    updateSenderStatus('complete', '传输完成！');
+                    senderProgressBar.style.width = '100%';
+                    senderProgressBar.classList.add('complete');
+                    senderSpeed.textContent = '';
+                    showAlert('所有文件发送完成！', 'success');
+                    return;
+                }
+                sendSingleFile(fileIndex, () => {
+                    sendAllFiles(fileIndex + 1);
+                });
+            }
+
+            function sendSingleFile(fileIndex, onComplete) {
+                const file = selectedFiles[fileIndex];
+                const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+                let currentChunk = 0;
+                const reader = new FileReader();
+                let offset = 0;
+
+                function readNextChunk() {
+                    if (currentChunk >= totalChunks) {
+                        onComplete();
+                        return;
+                    }
+                    const start = currentChunk * CHUNK_SIZE;
+                    const end = Math.min(start + CHUNK_SIZE, file.size);
+                    const slice = file.slice(start, end);
+                    reader.readAsArrayBuffer(slice);
+                }
+
+                reader.onload = function(e) {
+                    const chunkData = new Uint8Array(e.target.result);
+                    sendFileChunk(fileIndex, currentChunk, totalChunks, chunkData);
+                    totalBytesSent += chunkData.byteLength;
+                    currentChunk++;
+
+                    // 更新进度
+                    const now = Date.now();
+                    const elapsed = (now - lastSpeedUpdate) / 1000;
+                    bytesSinceLastUpdate += chunkData.byteLength;
+                    if (elapsed >= 1.0) {
+                        const speed = bytesSinceLastUpdate / elapsed;
+                        senderSpeed.textContent = formatSpeed(speed);
+                        bytesSinceLastUpdate = 0;
+                        lastSpeedUpdate = now;
+                    }
+                    const progress = Math.round((totalBytesSent / totalBytesToSend) * 100);
+                    updateSenderProgress(progress);
+
+                    // 检查缓冲区，避免发送过快
+                    if (conn && conn._dc && conn._dc.bufferedAmount > 1024 * 1024) {
+                        // 缓冲区超过1MB，等待
+                        const onBufferedLow = () => {
+                            conn._dc.removeEventListener('bufferedamountlow', onBufferedLow);
+                            readNextChunk();
+                        };
+                        conn._dc.addEventListener('bufferedamountlow', onBufferedLow);
+                    } else {
+                        // 使用微小的延迟来让出主线程
+                        if (currentChunk % 20 === 0) {
+                            setTimeout(readNextChunk, 5);
+                        } else {
+                            readNextChunk();
+                        }
+                    }
+                };
+
+                reader.onerror = function() {
+                    console.error('Failed to read file chunk');
+                    showAlert('读取文件失败', 'error');
+                    onComplete();
+                };
+
+                readNextChunk();
+            }
+
+            function sendBinaryMessage(msgType, jsonPayload) {
+                if (!conn) return;
+                const encoder = new TextEncoder();
+                const jsonBytes = encoder.encode(jsonPayload);
+                const buffer = new ArrayBuffer(1 + jsonBytes.byteLength);
+                const view = new DataView(buffer);
+                view.setUint8(0, msgType);
+                const dest = new Uint8Array(buffer, 1);
+                dest.set(jsonBytes);
+                conn.send(buffer);
+            }
+
+            function sendFileChunk(fileIndex, chunkIndex, totalChunks, chunkData) {
+                if (!conn) return;
+                const buffer = new ArrayBuffer(13 + chunkData.byteLength);
+                const view = new DataView(buffer);
+                view.setUint8(0, 1); // 消息类型：文件块
+                view.setUint32(1, fileIndex, false);
+                view.setUint32(5, chunkIndex, false);
+                view.setUint32(9, totalChunks, false);
+                const dest = new Uint8Array(buffer, 13);
+                dest.set(chunkData);
+                conn.send(buffer);
+            }
+
+            function updateSenderStatus(status, text) {
+                let dotClass = 'connecting';
+                let badgeClass = 'status-connecting';
+                if (status === 'connected') { dotClass = 'connected';
+                    badgeClass = 'status-connected'; } else if (status === 'transferring') { dotClass = 'transferring';
+                    badgeClass = 'status-transferring'; } else if (status === 'complete') { dotClass = 'connected';
+                    badgeClass = 'status-complete'; } else if (status === 'error') { dotClass = '';
+                    badgeClass = 'status-error'; }
+                senderStatus.innerHTML = `
+                    <span class="status-badge ${badgeClass}">
+                        ${dotClass ? `<span class="status-dot ${dotClass}"></span>` : ''}
+                        ${text}
+                    </span>
+                `;
+            }
+
+            function updateSenderProgress(percent) {
+                senderProgressBar.style.width = percent + '%';
+                senderProgressLabel.textContent = `发送中... ${percent}%`;
+            }
+
+            function updateReceiverStatus(status, text) {
+                let dotClass = 'connecting';
+                let badgeClass = 'status-connecting';
+                if (status === 'connected') { dotClass = 'connected';
+                    badgeClass = 'status-connected'; } else if (status === 'transferring') { dotClass = 'transferring';
+                    badgeClass = 'status-transferring'; } else if (status === 'complete') { dotClass = 'connected';
+                    badgeClass = 'status-complete'; } else if (status === 'error') { dotClass = '';
+                    badgeClass = 'status-error'; }
+                receiverStatus.innerHTML = `
+                    <span class="status-badge ${badgeClass}">
+                        ${dotClass ? `<span class="status-dot ${dotClass}"></span>` : ''}
+                        ${text}
+                    </span>
+                `;
+            }
+
+            function updateReceiverProgress(percent) {
+                receiverProgressBar.style.width = percent + '%';
+                receiverProgressLabel.textContent = `接收中... ${percent}%`;
+            }
+
+            // ============ 复制和分享 ============
+            function copyRoomCode() {
+                if (!roomId) return;
+                navigator.clipboard.writeText(roomId).then(() => {
+                    btnCopyRoom.classList.add('copied');
+                    setTimeout(() => btnCopyRoom.classList.remove('copied'), 1800);
+                }).catch(() => {
+                    // 降级方案
+                    const input = document.createElement('input');
+                    input.value = roomId;
+                    document.body.appendChild(input);
+                    input.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(input);
+                    btnCopyRoom.classList.add('copied');
+                    setTimeout(() => btnCopyRoom.classList.remove('copied'), 1800);
+                });
+            }
+
+            function shareRoomLink() {
+                const link = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
+                navigator.clipboard.writeText(link).then(() => {
+                    showAlert('链接已复制！发送给朋友即可', 'success');
+                }).catch(() => {
+                    const input = document.createElement('input');
+                    input.value = link;
+                    document.body.appendChild(input);
+                    input.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(input);
+                    showAlert('链接已复制！', 'success');
+                });
+            }
+
+            // ============ 文件选择 ============
+            fileInput.addEventListener('change', function() {
+                handleFileSelection(Array.from(this.files));
+            });
+
+            dropZone.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.classList.add('drag-over');
+            });
+
+            dropZone.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.classList.remove('drag-over');
+            });
+
+            dropZone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.classList.remove('drag-over');
+                if (e.dataTransfer.files.length > 0) {
+                    handleFileSelection(Array.from(e.dataTransfer.files));
+                }
+            });
+
+            function handleFileSelection(files) {
+                if (!isSender || appState !== 'created' && appState !== 'connected') return;
+                selectedFiles = files;
+                renderFileList();
+                if (appState === 'connected' && conn && selectedFiles.length > 0) {
+                    startSendingFiles();
+                }
+            }
+
+            function renderFileList() {
+                fileList.innerHTML = '';
+                if (selectedFiles.length === 0) {
+                    fileList.classList.add('hidden');
+                    return;
+                }
+                fileList.classList.remove('hidden');
+                selectedFiles.forEach((f, i) => {
+                    const li = document.createElement('li');
+                    const icon = getFileIcon(f.name);
+                    li.innerHTML = `
+                        <span class="file-icon">${icon}</span>
+                        <div class="file-info">
+                            <div class="file-name">${escapeHtml(f.name)}</div>
+                            <div class="file-size">${formatSize(f.size)}</div>
+                        </div>
+                        <button class="file-remove" onclick="removeFile(${i})" title="移除">×</button>
+                    `;
+                    fileList.appendChild(li);
+                });
+                // 如果已连接，自动发送
+                if (appState === 'connected' && conn && selectedFiles.length > 0 && !transferComplete) {
+                    startSendingFiles();
+                }
+            }
+
+            function getFileIcon(filename) {
+                const ext = filename.split('.').pop().toLowerCase();
+                const iconMap = {
+                    'jpg': '🖼️',
+                    'jpeg': '🖼️',
+                    'png': '🖼️',
+                    'gif': '🖼️',
+                    'webp': '🖼️',
+                    'svg': '🖼️',
+                    'bmp': '🖼️',
+                    'mp4': '🎬',
+                    'mov': '🎬',
+                    'avi': '🎬',
+                    'mkv': '🎬',
+                    'mp3': '🎵',
+                    'wav': '🎵',
+                    'flac': '🎵',
+                    'aac': '🎵',
+                    'pdf': '📕',
+                    'doc': '📝',
+                    'docx': '📝',
+                    'xls': '📊',
+                    'xlsx': '📊',
+                    'ppt': '📽️',
+                    'pptx': '📽️',
+                    'zip': '📦',
+                    'rar': '📦',
+                    '7z': '📦',
+                    'tar': '📦',
+                    'gz': '📦',
+                    'txt': '📄',
+                    'json': '📄',
+                    'csv': '📄',
+                    'html': '🌐',
+                    'css': '🎨',
+                    'js': '⚙️',
+                    'py': '🐍',
+                    'exe': '💻',
+                    'apk': '📱',
+                    'dmg': '💿',
+                };
+                return iconMap[ext] || '📎';
+            }
+
+            window.removeFile = function(index) {
+                selectedFiles.splice(index, 1);
+                renderFileList();
+                fileInput.value = '';
+            };
+
+            // ============ URL参数检测（自动加入房间） ============
+            function checkUrlParams() {
+                const params = new URLSearchParams(window.location.search);
+                const roomParam = params.get('room');
+                if (roomParam && appState === 'idle') {
+                    roomCodeInput.value = roomParam.trim().toUpperCase();
+                    joinRoom();
+                }
+            }
+
+            // ============ 键盘事件 ============
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && appState === 'joining') {
+                    const input = roomCodeInput.value.trim();
+                    if (input.length >= 3) {
+                        joinRoom();
+                    }
+                }
+            });
+
+            // ============ 页面卸载清理 ============
+            window.addEventListener('beforeunload', function() {
+                cleanupPeer();
+            });
+
+            // ============ 初始化 ============
+            showScreen(screenIdle);
+            checkUrlParams();
+
+            // 暴露函数到全局
+            window.createRoom = createRoom;
+            window.showJoinScreen = showJoinScreen;
+            window.joinRoom = joinRoom;
+            window.goBackToIdle = goBackToIdle;
+            window.copyRoomCode = copyRoomCode;
+            window.shareRoomLink = shareRoomLink;
+            window.resetAll = resetAll;
+
+            console.log('🚀 P2P 文件传输已就绪');
+            console.log('💡 提示：创建房间后，将房间号分享给对方即可开始传输');
+            console.log('🔒 文件直接在设备间传输，不经过任何服务器');
+        })();
+    </script>
+</body>
+</html>
