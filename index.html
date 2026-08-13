@@ -1,11 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="light">
+<html lang="zh-CN" data-theme="light" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>P2P 文件互传</title>
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js">
-    </script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
             --bg: #f0f2f5;
@@ -29,6 +28,20 @@
             --btn-secondary-bg: #f4f5fa;
             --btn-secondary-hover-bg: #eaecf4;
             --room-display-bg: #f8f9fd;
+            --lang-select-bg: #ffffff;
+            --lang-select-text: #1a1a2e;
+            --lang-select-border: #e2e6f0;
+            --status-connecting-bg: #fffbeb;
+            --status-connecting-text: #b45309;
+            --status-connected-bg: #ecfdf5;
+            --status-connected-text: #065f46;
+            --status-transferring-bg: #eff6ff;
+            --status-transferring-text: #1e40af;
+            --status-complete-bg: #ecfdf5;
+            --status-complete-text: #065f46;
+            --status-error-bg: #fef2f2;
+            --status-error-text: #991b1b;
+            --drop-zone-hover-bg: #f5f6ff;
         }
         html[data-theme="dark"] {
             --bg: #111827;
@@ -49,11 +62,20 @@
             --btn-secondary-bg: #374151;
             --btn-secondary-hover-bg: #4b5563;
             --room-display-bg: #111827;
-        }
-        html[data-theme="dark"] body {
-            background-image: radial-gradient(ellipse at 30% 20%, #1e293b 0%, transparent 60%),
-                radial-gradient(ellipse at 70% 80%, #0f172a 0%, transparent 60%),
-                radial-gradient(ellipse at 50% 50%, #111827 0%, transparent 100%);
+            --lang-select-bg: #1f2937;
+            --lang-select-text: #f1f5f9;
+            --lang-select-border: #334155;
+            --status-connecting-bg: #3a2f1b;
+            --status-connecting-text: #fbbf24;
+            --status-connected-bg: #1b3a2f;
+            --status-connected-text: #34d399;
+            --status-transferring-bg: #1b2a3a;
+            --status-transferring-text: #60a5fa;
+            --status-complete-bg: #1b3a2f;
+            --status-complete-text: #34d399;
+            --status-error-bg: #3a1b1b;
+            --status-error-text: #f87171;
+            --drop-zone-hover-bg: #26334a;
         }
         * {
             margin: 0;
@@ -62,10 +84,7 @@
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-            background: var(--bg);
-            background-image: radial-gradient(ellipse at 30% 20%, #e8ecff 0%, transparent 60%),
-                radial-gradient(ellipse at 70% 80%, #e0f2fe 0%, transparent 60%),
-                radial-gradient(ellipse at 50% 50%, #f0f2f5 0%, transparent 100%);
+            background-color: var(--bg);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -74,19 +93,18 @@
             color: var(--text);
             -webkit-tap-highlight-color: transparent;
             -webkit-font-smoothing: antialiased;
-            transition: background 0.3s, color 0.3s;
+            transition: background-color 0.25s ease, color 0.25s ease;
         }
         .container {
             width: 100%;
-            max-width: 560px;
-            position: relative;
+            max-width: 580px;
         }
         .card {
             background: var(--card-bg);
             border-radius: var(--radius);
             padding: 32px 28px;
             box-shadow: var(--shadow-md);
-            transition: all var(--transition);
+            transition: background-color 0.25s ease, border-color 0.25s ease;
             border: 1px solid var(--border);
             position: relative;
             overflow: hidden;
@@ -116,6 +134,7 @@
             align-items: center;
             gap: 10px;
             margin-bottom: 8px;
+            flex-wrap: wrap;
         }
         .logo-icon {
             width: 44px;
@@ -135,9 +154,15 @@
             font-weight: 700;
             color: var(--text);
             letter-spacing: -0.3px;
+            transition: color 0.25s ease;
+        }
+        .controls {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         .theme-toggle {
-            margin-left: auto;
             background: none;
             border: none;
             font-size: 1.5rem;
@@ -145,22 +170,42 @@
             padding: 6px;
             border-radius: 50%;
             line-height: 1;
-            transition: background 0.2s;
+            transition: background-color 0.25s ease;
             color: inherit;
             display: flex;
             align-items: center;
             justify-content: center;
             width: 36px;
             height: 36px;
+            pointer-events: auto;
         }
         .theme-toggle:hover {
             background: var(--border);
+        }
+        .lang-select {
+            background: var(--lang-select-bg);
+            color: var(--lang-select-text);
+            border: 1.5px solid var(--lang-select-border);
+            border-radius: 8px;
+            padding: 6px 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            outline: none;
+            font-weight: 500;
+            appearance: auto;
+            transition: all var(--transition);
+            max-width: 150px;
+            pointer-events: auto;
+        }
+        .lang-select:hover {
+            border-color: var(--primary);
         }
         .subtitle {
             font-size: 0.9rem;
             color: var(--text-secondary);
             margin-bottom: 24px;
             line-height: 1.5;
+            transition: color 0.25s ease;
         }
         .btn {
             display: inline-flex;
@@ -181,6 +226,7 @@
             outline: none;
             position: relative;
             overflow: hidden;
+            pointer-events: auto;
         }
         .btn:active {
             transform: scale(0.96);
@@ -243,6 +289,7 @@
             color: var(--text-secondary);
             font-size: 0.85rem;
             font-weight: 500;
+            transition: color 0.25s ease;
         }
         .divider::before,
         .divider::after {
@@ -250,6 +297,7 @@
             flex: 1;
             height: 1px;
             background: var(--border);
+            transition: background-color 0.25s ease;
         }
         .input-group {
             display: flex;
@@ -270,6 +318,7 @@
             text-align: center;
             text-transform: uppercase;
             color: var(--text);
+            pointer-events: auto;
         }
         .input-group input:focus {
             border-color: var(--primary);
@@ -289,6 +338,7 @@
             text-align: center;
             border: 1.5px dashed var(--border);
             margin: 16px 0;
+            transition: background-color 0.25s ease, border-color 0.25s ease;
         }
         .room-code {
             font-size: 2.2rem;
@@ -299,6 +349,7 @@
             user-select: all;
             -webkit-user-select: all;
             word-break: break-all;
+            transition: color 0.25s ease;
         }
         .room-label {
             font-size: 0.8rem;
@@ -307,20 +358,7 @@
             color: var(--text-secondary);
             margin-bottom: 6px;
             font-weight: 600;
-        }
-        .qr-wrapper {
-            display: flex;
-            justify-content: center;
-            margin: 12px 0;
-        }
-        .qr-img {
-            border-radius: 12px;
-            box-shadow: var(--shadow-sm);
-            max-width: 160px;
-            height: auto;
-            background: #fff;
-            padding: 8px;
-            border: 1px solid var(--border);
+            transition: color 0.25s ease;
         }
         .drop-zone {
             border: 2px dashed var(--border);
@@ -332,11 +370,12 @@
             background: var(--drop-zone-bg);
             margin: 16px 0;
             position: relative;
+            pointer-events: auto;
         }
         .drop-zone:hover,
         .drop-zone.drag-over {
             border-color: var(--primary);
-            background: #f5f6ff;
+            background: var(--drop-zone-hover-bg);
             box-shadow: 0 0 0 4px rgba(79, 110, 247, 0.06);
         }
         .drop-zone-icon {
@@ -348,17 +387,20 @@
             font-weight: 600;
             color: var(--text);
             font-size: 0.95rem;
+            transition: color 0.25s ease;
         }
         .drop-zone-hint {
             font-size: 0.8rem;
             color: var(--text-secondary);
             margin-top: 4px;
+            transition: color 0.25s ease;
         }
         .drop-zone input[type="file"] {
             position: absolute;
             inset: 0;
             opacity: 0;
             cursor: pointer;
+            pointer-events: auto;
         }
         .file-list {
             list-style: none;
@@ -374,6 +416,7 @@
             margin-bottom: 6px;
             font-size: 0.9rem;
             border: 1px solid var(--border);
+            transition: background-color 0.25s ease, border-color 0.25s ease;
         }
         .file-list .file-icon {
             font-size: 1.4rem;
@@ -388,6 +431,7 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            color: var(--text);
         }
         .file-list .file-size {
             font-size: 0.78rem;
@@ -403,6 +447,7 @@
             background: none;
             border: none;
             line-height: 1;
+            pointer-events: auto;
         }
         .file-list .file-remove:hover {
             color: var(--danger);
@@ -418,12 +463,14 @@
             margin-bottom: 6px;
             font-size: 0.85rem;
             font-weight: 500;
+            color: var(--text);
         }
         .progress-bar-outer {
             height: 10px;
             background: #eef0f6;
             border-radius: 10px;
             overflow: hidden;
+            transition: background-color 0.25s ease;
         }
         .progress-bar-inner {
             height: 100%;
@@ -449,26 +496,27 @@
             font-size: 0.82rem;
             font-weight: 600;
             letter-spacing: 0.3px;
+            transition: background-color 0.25s ease, color 0.25s ease;
         }
         .status-connecting {
-            background: #fffbeb;
-            color: #b45309;
+            background: var(--status-connecting-bg);
+            color: var(--status-connecting-text);
         }
         .status-connected {
-            background: #ecfdf5;
-            color: #065f46;
+            background: var(--status-connected-bg);
+            color: var(--status-connected-text);
         }
         .status-transferring {
-            background: #eff6ff;
-            color: #1e40af;
+            background: var(--status-transferring-bg);
+            color: var(--status-transferring-text);
         }
         .status-complete {
-            background: #ecfdf5;
-            color: #065f46;
+            background: var(--status-complete-bg);
+            color: var(--status-complete-text);
         }
         .status-error {
-            background: #fef2f2;
-            color: #991b1b;
+            background: var(--status-error-bg);
+            color: var(--status-error-text);
         }
         .status-dot {
             width: 8px;
@@ -505,6 +553,7 @@
             margin: 12px 0;
             font-weight: 500;
             line-height: 1.5;
+            transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
         }
         .alert-info {
             background: #eff6ff;
@@ -582,6 +631,23 @@
         .copy-tooltip.copied::after {
             opacity: 1;
         }
+        html[dir="rtl"] .controls {
+            margin-left: 0;
+            margin-right: auto;
+        }
+        html[dir="rtl"] .logo {
+            flex-direction: row-reverse;
+        }
+        html[dir="rtl"] .btn-row,
+        html[dir="rtl"] .input-group {
+            flex-direction: row-reverse;
+        }
+        html[dir="rtl"] .file-list li {
+            flex-direction: row-reverse;
+        }
+        html[dir="rtl"] .file-list .file-info {
+            text-align: right;
+        }
         @media (max-width: 480px) {
             .card {
                 padding: 24px 16px;
@@ -608,65 +674,108 @@
             .drop-zone {
                 padding: 24px 14px;
             }
-            .qr-img {
-                max-width: 130px;
+            .controls {
+                gap: 4px;
             }
+            .lang-select {
+                max-width: 120px;
+                font-size: 0.8rem;
+            }
+        }
+        html[data-theme="dark"] .alert-info {
+            background: #1b2a3a;
+            color: #60a5fa;
+            border-color: #1e3a5f;
+        }
+        html[data-theme="dark"] .alert-warning {
+            background: #3a2f1b;
+            color: #fbbf24;
+            border-color: #5f3f1e;
+        }
+        html[data-theme="dark"] .alert-error {
+            background: #3a1b1b;
+            color: #f87171;
+            border-color: #5f1e1e;
+        }
+        html[data-theme="dark"] .alert-success {
+            background: #1b3a2f;
+            color: #34d399;
+            border-color: #1e5f3f;
+        }
+        html[data-theme="dark"] .progress-bar-outer {
+            background: #374151;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="card" id="mainCard">
-            <!-- Logo 和主题切换按钮 -->
             <div class="logo">
                 <div class="logo-icon">📁</div>
-                <div class="logo-text">P2P 文件互传</div>
-                <button class="theme-toggle" id="themeToggle" title="切换深色/浅色模式" aria-label="切换主题">🌙</button>
+                <div class="logo-text" data-i18n="app_title">P2P 文件互传</div>
+                <div class="controls">
+                    <select id="langSelect" class="lang-select" title="Language / 语言">
+                        <option value="zh">中文</option>
+                        <option value="en">English</option>
+                        <option value="ja">日本語</option>
+                        <option value="ko">한국어</option>
+                        <option value="ru">Русский</option>
+                        <option value="de">Deutsch</option>
+                        <option value="fr">Français</option>
+                        <option value="es">Español</option>
+                        <option value="ar">العربية</option>
+                        <option value="pt">Português</option>
+                        <option value="it">Italiano</option>
+                        <option value="nl">Nederlands</option>
+                        <option value="pl">Polski</option>
+                        <option value="tr">Türkçe</option>
+                        <option value="vi">Tiếng Việt</option>
+                        <option value="th">ไทย</option>
+                        <option value="id">Bahasa Indonesia</option>
+                        <option value="hi">हिन्दी</option>
+                    </select>
+                    <button class="theme-toggle" id="themeToggle" title="切换深色/浅色模式" aria-label="切换主题">🌙</button>
+                </div>
             </div>
-            <p class="subtitle">安全、快速的端到端文件传输<br>同一房间内的两个人可以互相发送文件</p>
+            <p class="subtitle" data-i18n="app_subtitle">安全、快速的端到端文件传输<br>同一房间内的两个人可以互相发送文件</p>
 
-            <!-- 初始状态 -->
             <div id="screenIdle">
                 <div class="btn-row">
-                    <button class="btn btn-primary" onclick="createRoom()" id="btnCreate">✨ 创建房间</button>
-                    <button class="btn btn-secondary" onclick="showJoinScreen()" id="btnJoin">🔗 加入房间</button>
+                    <button class="btn btn-primary" id="btnCreate" data-i18n="create_room">✨ 创建房间</button>
+                    <button class="btn btn-secondary" id="btnJoin" data-i18n="join_room">🔗 加入房间</button>
                 </div>
             </div>
 
-            <!-- 加入房间界面 -->
             <div id="screenJoin" class="hidden fade-in">
                 <div class="input-group mb-3">
                     <input type="text" id="roomCodeInput" placeholder="输入房间号" maxlength="8" autocomplete="off"
-                    autocorrect="off" autocapitalize="characters" spellcheck="false">
-                    <button class="btn btn-primary" onclick="joinRoom()" id="btnJoinConfirm">加入</button>
+                    autocorrect="off" autocapitalize="characters" spellcheck="false" data-i18n-placeholder="placeholder_room_code">
+                    <button class="btn btn-primary" id="btnJoinConfirm" data-i18n="join">加入</button>
                 </div>
-                <button class="btn btn-secondary btn-sm" onclick="goBackToIdle()" style="width:100%;">← 返回</button>
+                <button class="btn btn-secondary btn-sm btn-block" id="btnBack" data-i18n="back">← 返回</button>
                 <div id="joinStatus" class="hidden"></div>
             </div>
 
-            <!-- 房间内界面（双向传输） -->
             <div id="screenRoom" class="hidden fade-in">
-                <!-- 房间信息区 -->
-                <div id="roomInfoArea" class="room-display">
-                    <div class="room-label" id="roomInfoLabel">房间号</div>
+                <div class="room-display">
+                    <div class="room-label" id="roomInfoLabel" data-i18n="room_number">房间号</div>
                     <div class="room-code" id="roomCodeDisplay">------</div>
                     <div class="mt-2" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
-                        <button class="btn btn-secondary btn-sm copy-tooltip" id="btnCopyRoom" onclick="copyRoomCode()">📋 复制房间号</button>
-                        <button class="btn btn-secondary btn-sm" onclick="shareRoomLink()">🔗 复制链接</button>
+                        <button class="btn btn-secondary btn-sm copy-tooltip" id="btnCopyRoom" data-i18n="copy_room">📋 复制房间号</button>
+                        <button class="btn btn-secondary btn-sm" id="btnShareLink" data-i18n="copy_link">🔗 复制链接</button>
                     </div>
                 </div>
 
-                <!-- 发送区域 -->
                 <div class="drop-zone" id="dropZone">
                     <span class="drop-zone-icon">📎</span>
-                    <p class="drop-zone-text">点击或拖拽文件到此处发送给对方</p>
-                    <p class="drop-zone-hint">支持任意类型文件，可选择多个</p>
+                    <p class="drop-zone-text" data-i18n="drop_hint">点击或拖拽文件到此处发送给对方</p>
+                    <p class="drop-zone-hint" data-i18n="drop_sub">支持任意类型文件，可选择多个</p>
                     <input type="file" id="fileInput" multiple>
                 </div>
                 <ul class="file-list hidden" id="fileList"></ul>
                 <div id="sendStatus" class="text-center mt-3">
                     <span class="status-badge status-connecting">
-                        <span class="status-dot connecting"></span> 等待连接...
+                        <span class="status-dot connecting"></span> <span data-i18n="waiting_for_connection">等待连接...</span>
                     </span>
                 </div>
                 <div id="sendProgress" class="hidden">
@@ -681,11 +790,10 @@
                     </div>
                 </div>
 
-                <!-- 接收区域 -->
-                <div class="divider">接收</div>
+                <div class="divider" data-i18n="receive_section">接收</div>
                 <div id="receiveStatus" class="text-center">
                     <span class="status-badge status-connecting">
-                        <span class="status-dot connecting"></span> 等待对方传输...
+                        <span class="status-dot connecting"></span> <span data-i18n="waiting_for_files_short">等待对方传输...</span>
                     </span>
                 </div>
                 <div id="receiveProgress" class="hidden">
@@ -701,711 +809,768 @@
                 </div>
                 <div id="receiveFileInfo" class="hidden alert alert-info"></div>
                 <div id="receivedFiles" class="hidden">
-                    <p style="font-weight:600;margin-bottom:8px;">✅ 接收完成的文件：</p>
+                    <p style="font-weight:600;margin-bottom:8px;" data-i18n="received_files">✅ 接收完成的文件：</p>
                     <ul class="file-list" id="receivedFileList"></ul>
                 </div>
 
-                <button class="btn btn-secondary btn-sm btn-block mt-3" onclick="resetAll()">重新开始</button>
+                <button class="btn btn-secondary btn-sm btn-block mt-3" id="btnRestart" data-i18n="restart">重新开始</button>
             </div>
 
-            <!-- 全局提示 -->
             <div id="globalAlert" class="hidden"></div>
         </div>
     </div>
 
     <script>
-        (function() {
-            // ============ 主题切换 ============
-            const themeToggleBtn = document.getElementById('themeToggle');
-            const htmlElement = document.documentElement;
+        // ============ 翻译字典（18种语言） ============
+        const translations = {
+            zh: { app_title: 'P2P 文件互传', app_subtitle: '安全、快速的端到端文件传输<br>同一房间内的两个人可以互相发送文件', create_room: '✨ 创建房间', join_room: '🔗 加入房间', back: '← 返回', join: '加入', placeholder_room_code: '输入房间号', room_number: '房间号', connected_to_room: '已连接到房间', copy_room: '📋 复制房间号', copy_link: '🔗 复制链接', drop_hint: '点击或拖拽文件到此处发送给对方', drop_sub: '支持任意类型文件，可选择多个', waiting_for_connection: '等待连接...', waiting_for_peer: '等待对方连接...', peer_connected: '对方已连接，可以发送文件', connected_can_send: '已连接，可以发送文件', waiting_for_files: '等待对方传输文件...', waiting_for_files_short: '等待对方传输...', sending_files: '正在发送文件...', sending_progress: '发送中... {percent}%', send_complete: '发送完成！', receiving_files_count: '正在接收 {count} 个文件...', receiving_file_info: '📥 接收文件：{names}（共 {size}）', receive_complete: '全部接收完成！', transfer_complete: '传输完成！', all_sent: '所有文件发送完成！', all_received: '所有文件接收完成！', read_error: '读取文件失败', connection_closed: '连接已关闭', data_error: '数据传输错误', room_not_found: '找不到该房间，请确认房间号是否正确', network_error: '网络连接问题，请检查网络后重试', room_conflict: '房间号冲突，已重新生成', copy_success: '链接已复制！发送给朋友即可', link_copied: '链接已复制！', remove_file: '移除', download: '⬇ 下载', restart: '重新开始', receive_section: '接收', received_files: '✅ 接收完成的文件：', connecting_room: '正在连接房间...', join_status_error: '房间不存在', join_status_network: '网络连接问题', transfer_complete_alert: '文件传输完成！' },
+            en: { app_title: 'P2P File Transfer', app_subtitle: 'Secure and fast end-to-end file transfer<br>Two people in the same room can send files to each other', create_room: '✨ Create Room', join_room: '🔗 Join Room', back: '← Back', join: 'Join', placeholder_room_code: 'Enter room code', room_number: 'Room Code', connected_to_room: 'Connected to room', copy_room: '📋 Copy Room Code', copy_link: '🔗 Copy Link', drop_hint: 'Click or drag files here to send', drop_sub: 'Supports any file type, multiple files', waiting_for_connection: 'Waiting for connection...', waiting_for_peer: 'Waiting for peer...', peer_connected: 'Peer connected, you can send files', connected_can_send: 'Connected, ready to send', waiting_for_files: 'Waiting for files...', waiting_for_files_short: 'Waiting for files...', sending_files: 'Sending files...', sending_progress: 'Sending... {percent}%', send_complete: 'Send complete!', receiving_files_count: 'Receiving {count} files...', receiving_file_info: '📥 Receiving: {names} (total {size})', receive_complete: 'All received!', transfer_complete: 'Transfer complete!', all_sent: 'All files sent!', all_received: 'All files received!', read_error: 'Failed to read file', connection_closed: 'Connection closed', data_error: 'Data transfer error', room_not_found: 'Room not found, please check the code', network_error: 'Network error, please try again', room_conflict: 'Room code conflict, regenerated', copy_success: 'Link copied! Send to your friend', link_copied: 'Link copied!', remove_file: 'Remove', download: '⬇ Download', restart: 'Restart', receive_section: 'Receive', received_files: '✅ Received files:', connecting_room: 'Connecting to room...', join_status_error: 'Room not found', join_status_network: 'Network error', transfer_complete_alert: 'File transfer complete!' },
+            ja: { app_title: 'P2P ファイル転送', app_subtitle: '安全で高速なエンドツーエンドのファイル転送<br>同じ部屋の2人がファイルを送受信できます', create_room: '✨ 部屋を作成', join_room: '🔗 部屋に参加', back: '← 戻る', join: '参加', placeholder_room_code: '部屋番号を入力', room_number: '部屋番号', connected_to_room: '部屋に接続済み', copy_room: '📋 部屋番号をコピー', copy_link: '🔗 リンクをコピー', drop_hint: 'ここをクリックまたはドラッグしてファイルを送信', drop_sub: '任意のファイルタイプ、複数選択可能', waiting_for_connection: '接続待機中...', waiting_for_peer: '相手の接続を待っています...', peer_connected: '相手が接続しました。ファイルを送信できます', connected_can_send: '接続済み、送信準備完了', waiting_for_files: 'ファイルを待っています...', waiting_for_files_short: 'ファイル待機中...', sending_files: 'ファイル送信中...', sending_progress: '送信中... {percent}%', send_complete: '送信完了！', receiving_files_count: '{count}個のファイルを受信中...', receiving_file_info: '📥 受信：{names}（合計 {size}）', receive_complete: 'すべて受信完了！', transfer_complete: '転送完了！', all_sent: 'すべてのファイルを送信しました！', all_received: 'すべてのファイルを受信しました！', read_error: 'ファイルの読み取りに失敗', connection_closed: '接続が閉じられました', data_error: 'データ転送エラー', room_not_found: '部屋が見つかりません。部屋番号を確認してください', network_error: 'ネットワークエラー、再試行してください', room_conflict: '部屋番号が衝突したため再生成しました', copy_success: 'リンクをコピーしました！友達に送信してください', link_copied: 'リンクをコピーしました！', remove_file: '削除', download: '⬇ ダウンロード', restart: '再開', receive_section: '受信', received_files: '✅ 受信完了ファイル：', connecting_room: '部屋に接続中...', join_status_error: '部屋が見つかりません', join_status_network: 'ネットワークエラー', transfer_complete_alert: 'ファイル転送完了！' },
+            ko: { app_title: 'P2P 파일 전송', app_subtitle: '안전하고 빠른 엔드투엔드 파일 전송<br>같은 방에 있는 두 사람이 파일을 주고받을 수 있습니다', create_room: '✨ 방 만들기', join_room: '🔗 방 참가', back: '← 뒤로', join: '참가', placeholder_room_code: '방 코드 입력', room_number: '방 코드', connected_to_room: '방에 연결됨', copy_room: '📋 방 코드 복사', copy_link: '🔗 링크 복사', drop_hint: '파일을 보내려면 여기를 클릭하거나 드래그하세요', drop_sub: '모든 파일 유형 지원, 여러 개 선택 가능', waiting_for_connection: '연결 대기 중...', waiting_for_peer: '상대방을 기다리는 중...', peer_connected: '상대방이 연결되었습니다. 파일을 보낼 수 있습니다', connected_can_send: '연결됨, 전송 준비 완료', waiting_for_files: '파일을 기다리는 중...', waiting_for_files_short: '파일 대기 중...', sending_files: '파일 전송 중...', sending_progress: '전송 중... {percent}%', send_complete: '전송 완료!', receiving_files_count: '{count}개 파일 수신 중...', receiving_file_info: '📥 수신: {names} (총 {size})', receive_complete: '모두 수신 완료!', transfer_complete: '전송 완료!', all_sent: '모든 파일을 보냈습니다!', all_received: '모든 파일을 받았습니다!', read_error: '파일 읽기 실패', connection_closed: '연결이 닫혔습니다', data_error: '데이터 전송 오류', room_not_found: '방을 찾을 수 없습니다. 코드를 확인하세요', network_error: '네트워크 오류, 다시 시도해주세요', room_conflict: '방 코드 충돌로 재생성되었습니다', copy_success: '링크 복사됨! 친구에게 보내세요', link_copied: '링크 복사됨!', remove_file: '제거', download: '⬇ 다운로드', restart: '다시 시작', receive_section: '수신', received_files: '✅ 받은 파일:', connecting_room: '방에 연결 중...', join_status_error: '방을 찾을 수 없습니다', join_status_network: '네트워크 오류', transfer_complete_alert: '파일 전송 완료!' },
+            ru: { app_title: 'P2P передача файлов', app_subtitle: 'Безопасная и быстрая передача файлов напрямую<br>Два человека в одной комнате могут отправлять файлы друг другу', create_room: '✨ Создать комнату', join_room: '🔗 Присоединиться', back: '← Назад', join: 'Войти', placeholder_room_code: 'Введите код комнаты', room_number: 'Код комнаты', connected_to_room: 'Подключено к комнате', copy_room: '📋 Копировать код', copy_link: '🔗 Копировать ссылку', drop_hint: 'Нажмите или перетащите файлы для отправки', drop_sub: 'Поддерживаются любые типы файлов, можно несколько', waiting_for_connection: 'Ожидание соединения...', waiting_for_peer: 'Ожидание собеседника...', peer_connected: 'Собеседник подключен, можно отправлять файлы', connected_can_send: 'Подключено, готово к отправке', waiting_for_files: 'Ожидание файлов...', waiting_for_files_short: 'Ожидание файлов...', sending_files: 'Отправка файлов...', sending_progress: 'Отправка... {percent}%', send_complete: 'Отправка завершена!', receiving_files_count: 'Получение {count} файлов...', receiving_file_info: '📥 Получение: {names} (всего {size})', receive_complete: 'Все получено!', transfer_complete: 'Передача завершена!', all_sent: 'Все файлы отправлены!', all_received: 'Все файлы получены!', read_error: 'Ошибка чтения файла', connection_closed: 'Соединение закрыто', data_error: 'Ошибка передачи данных', room_not_found: 'Комната не найдена, проверьте код', network_error: 'Ошибка сети, попробуйте еще раз', room_conflict: 'Конфликт кода комнаты, код пересоздан', copy_success: 'Ссылка скопирована! Отправьте другу', link_copied: 'Ссылка скопирована!', remove_file: 'Удалить', download: '⬇ Скачать', restart: 'Начать заново', receive_section: 'Получение', received_files: '✅ Полученные файлы:', connecting_room: 'Подключение к комнате...', join_status_error: 'Комната не найдена', join_status_network: 'Ошибка сети', transfer_complete_alert: 'Передача файлов завершена!' },
+            de: { app_title: 'P2P Dateiübertragung', app_subtitle: 'Sichere und schnelle Ende-zu-Ende-Dateiübertragung<br>Zwei Personen im selben Raum können Dateien austauschen', create_room: '✨ Raum erstellen', join_room: '🔗 Raum beitreten', back: '← Zurück', join: 'Beitreten', placeholder_room_code: 'Raumcode eingeben', room_number: 'Raumcode', connected_to_room: 'Mit Raum verbunden', copy_room: '📋 Raumcode kopieren', copy_link: '🔗 Link kopieren', drop_hint: 'Klicken oder Dateien hierher ziehen zum Senden', drop_sub: 'Unterstützt beliebige Dateitypen, mehrere möglich', waiting_for_connection: 'Warte auf Verbindung...', waiting_for_peer: 'Warte auf Teilnehmer...', peer_connected: 'Teilnehmer verbunden, Sie können Dateien senden', connected_can_send: 'Verbunden, bereit zum Senden', waiting_for_files: 'Warte auf Dateien...', waiting_for_files_short: 'Warte auf Dateien...', sending_files: 'Sende Dateien...', sending_progress: 'Senden... {percent}%', send_complete: 'Senden abgeschlossen!', receiving_files_count: 'Empfange {count} Dateien...', receiving_file_info: '📥 Empfange: {names} (gesamt {size})', receive_complete: 'Alles empfangen!', transfer_complete: 'Übertragung abgeschlossen!', all_sent: 'Alle Dateien gesendet!', all_received: 'Alle Dateien empfangen!', read_error: 'Datei konnte nicht gelesen werden', connection_closed: 'Verbindung geschlossen', data_error: 'Datenübertragungsfehler', room_not_found: 'Raum nicht gefunden, bitte Code überprüfen', network_error: 'Netzwerkfehler, bitte erneut versuchen', room_conflict: 'Raumcode-Konflikt, neu generiert', copy_success: 'Link kopiert! An Freund senden', link_copied: 'Link kopiert!', remove_file: 'Entfernen', download: '⬇ Herunterladen', restart: 'Neustart', receive_section: 'Empfangen', received_files: '✅ Empfangene Dateien:', connecting_room: 'Verbinde mit Raum...', join_status_error: 'Raum nicht gefunden', join_status_network: 'Netzwerkfehler', transfer_complete_alert: 'Dateiübertragung abgeschlossen!' },
+            fr: { app_title: 'Transfert de fichiers P2P', app_subtitle: 'Transfert de fichiers sécurisé et rapide de bout en bout<br>Deux personnes dans la même pièce peuvent s\'envoyer des fichiers', create_room: '✨ Créer une pièce', join_room: '🔗 Rejoindre une pièce', back: '← Retour', join: 'Rejoindre', placeholder_room_code: 'Entrez le code de la pièce', room_number: 'Code de la pièce', connected_to_room: 'Connecté à la pièce', copy_room: '📋 Copier le code', copy_link: '🔗 Copier le lien', drop_hint: 'Cliquez ou faites glisser les fichiers ici pour envoyer', drop_sub: 'Prend en charge tous les types de fichiers, plusieurs possible', waiting_for_connection: 'En attente de connexion...', waiting_for_peer: 'En attente du correspondant...', peer_connected: 'Correspondant connecté, vous pouvez envoyer des fichiers', connected_can_send: 'Connecté, prêt à envoyer', waiting_for_files: 'En attente de fichiers...', waiting_for_files_short: 'En attente de fichiers...', sending_files: 'Envoi de fichiers...', sending_progress: 'Envoi... {percent}%', send_complete: 'Envoi terminé !', receiving_files_count: 'Réception de {count} fichiers...', receiving_file_info: '📥 Réception : {names} (total {size})', receive_complete: 'Tout est reçu !', transfer_complete: 'Transfert terminé !', all_sent: 'Tous les fichiers envoyés !', all_received: 'Tous les fichiers reçus !', read_error: 'Échec de la lecture du fichier', connection_closed: 'Connexion fermée', data_error: 'Erreur de transfert de données', room_not_found: 'Pièce introuvable, vérifiez le code', network_error: 'Erreur réseau, veuillez réessayer', room_conflict: 'Conflit de code de pièce, régénéré', copy_success: 'Lien copié ! Envoyez-le à un ami', link_copied: 'Lien copié !', remove_file: 'Retirer', download: '⬇ Télécharger', restart: 'Recommencer', receive_section: 'Recevoir', received_files: '✅ Fichiers reçus :', connecting_room: 'Connexion à la pièce...', join_status_error: 'Pièce introuvable', join_status_network: 'Erreur réseau', transfer_complete_alert: 'Transfert de fichiers terminé !' },
+            es: { app_title: 'Transferencia de archivos P2P', app_subtitle: 'Transferencia segura y rápida de extremo a extremo<br>Dos personas en la misma sala pueden enviarse archivos', create_room: '✨ Crear sala', join_room: '🔗 Unirse a la sala', back: '← Atrás', join: 'Unirse', placeholder_room_code: 'Introduzca el código de la sala', room_number: 'Código de la sala', connected_to_room: 'Conectado a la sala', copy_room: '📋 Copiar código', copy_link: '🔗 Copiar enlace', drop_hint: 'Haga clic o arrastre archivos aquí para enviar', drop_sub: 'Admite cualquier tipo de archivo, múltiples', waiting_for_connection: 'Esperando conexión...', waiting_for_peer: 'Esperando al participante...', peer_connected: 'Participante conectado, puedes enviar archivos', connected_can_send: 'Conectado, listo para enviar', waiting_for_files: 'Esperando archivos...', waiting_for_files_short: 'Esperando archivos...', sending_files: 'Enviando archivos...', sending_progress: 'Enviando... {percent}%', send_complete: '¡Envío completado!', receiving_files_count: 'Recibiendo {count} archivos...', receiving_file_info: '📥 Recibiendo: {names} (total {size})', receive_complete: '¡Todo recibido!', transfer_complete: '¡Transferencia completada!', all_sent: '¡Todos los archivos enviados!', all_received: '¡Todos los archivos recibidos!', read_error: 'Error al leer el archivo', connection_closed: 'Conexión cerrada', data_error: 'Error de transferencia de datos', room_not_found: 'Sala no encontrada, compruebe el código', network_error: 'Error de red, inténtelo de nuevo', room_conflict: 'Conflicto de código de sala, regenerado', copy_success: '¡Enlace copiado! Envíalo a un amigo', link_copied: '¡Enlace copiado!', remove_file: 'Eliminar', download: '⬇ Descargar', restart: 'Reiniciar', receive_section: 'Recibir', received_files: '✅ Archivos recibidos:', connecting_room: 'Conectando a la sala...', join_status_error: 'Sala no encontrada', join_status_network: 'Error de red', transfer_complete_alert: '¡Transferencia de archivos completada!' },
+            ar: { app_title: 'نقل الملفات P2P', app_subtitle: 'نقل ملفات آمن وسريع من طرف إلى طرف<br>يمكن لشخصين في نفس الغرفة تبادل الملفات', create_room: '✨ إنشاء غرفة', join_room: '🔗 الانضمام إلى غرفة', back: '← رجوع', join: 'انضمام', placeholder_room_code: 'أدخل رمز الغرفة', room_number: 'رمز الغرفة', connected_to_room: 'متصل بالغرفة', copy_room: '📋 نسخ الرمز', copy_link: '🔗 نسخ الرابط', drop_hint: 'انقر أو اسحب الملفات هنا للإرسال', drop_sub: 'يدعم أي نوع ملفات، يمكن اختيار عدة ملفات', waiting_for_connection: 'في انتظار الاتصال...', waiting_for_peer: 'في انتظار الطرف الآخر...', peer_connected: 'الطرف الآخر متصل، يمكنك إرسال الملفات', connected_can_send: 'متصل، جاهز للإرسال', waiting_for_files: 'في انتظار الملفات...', waiting_for_files_short: 'في انتظار الملفات...', sending_files: 'إرسال الملفات...', sending_progress: 'إرسال... {percent}%', send_complete: 'اكتمل الإرسال!', receiving_files_count: 'استلام {count} ملف...', receiving_file_info: '📥 استلام: {names} (الإجمالي {size})', receive_complete: 'تم استلام كل شيء!', transfer_complete: 'اكتمل النقل!', all_sent: 'تم إرسال جميع الملفات!', all_received: 'تم استلام جميع الملفات!', read_error: 'فشل قراءة الملف', connection_closed: 'تم إغلاق الاتصال', data_error: 'خطأ في نقل البيانات', room_not_found: 'الغرفة غير موجودة، يرجى التحقق من الرمز', network_error: 'خطأ في الشبكة، يرجى المحاولة مرة أخرى', room_conflict: 'تعارض في رمز الغرفة، تم إنشاء رمز جديد', copy_success: 'تم نسخ الرابط! أرسله إلى صديقك', link_copied: 'تم نسخ الرابط!', remove_file: 'إزالة', download: '⬇ تنزيل', restart: 'إعادة البدء', receive_section: 'استلام', received_files: '✅ الملفات المستلمة:', connecting_room: 'جارٍ الاتصال بالغرفة...', join_status_error: 'الغرفة غير موجودة', join_status_network: 'خطأ في الشبكة', transfer_complete_alert: 'اكتمل نقل الملفات!' },
+            pt: { app_title: 'Transferência de arquivos P2P', app_subtitle: 'Transferência segura e rápida de ponta a ponta<br>Duas pessoas na mesma sala podem enviar arquivos uma para a outra', create_room: '✨ Criar sala', join_room: '🔗 Entrar na sala', back: '← Voltar', join: 'Entrar', placeholder_room_code: 'Digite o código da sala', room_number: 'Código da sala', connected_to_room: 'Conectado à sala', copy_room: '📋 Copiar código', copy_link: '🔗 Copiar link', drop_hint: 'Clique ou arraste arquivos aqui para enviar', drop_sub: 'Suporta qualquer tipo de arquivo, múltiplos', waiting_for_connection: 'Aguardando conexão...', waiting_for_peer: 'Aguardando participante...', peer_connected: 'Participante conectado, você pode enviar arquivos', connected_can_send: 'Conectado, pronto para enviar', waiting_for_files: 'Aguardando arquivos...', waiting_for_files_short: 'Aguardando arquivos...', sending_files: 'Enviando arquivos...', sending_progress: 'Enviando... {percent}%', send_complete: 'Envio concluído!', receiving_files_count: 'Recebendo {count} arquivos...', receiving_file_info: '📥 Recebendo: {names} (total {size})', receive_complete: 'Tudo recebido!', transfer_complete: 'Transferência concluída!', all_sent: 'Todos os arquivos enviados!', all_received: 'Todos os arquivos recebidos!', read_error: 'Falha ao ler arquivo', connection_closed: 'Conexão fechada', data_error: 'Erro na transferência de dados', room_not_found: 'Sala não encontrada, verifique o código', network_error: 'Erro de rede, tente novamente', room_conflict: 'Conflito de código de sala, regenerado', copy_success: 'Link copiado! Envie para um amigo', link_copied: 'Link copiado!', remove_file: 'Remover', download: '⬇ Baixar', restart: 'Reiniciar', receive_section: 'Receber', received_files: '✅ Arquivos recebidos:', connecting_room: 'Conectando à sala...', join_status_error: 'Sala não encontrada', join_status_network: 'Erro de rede', transfer_complete_alert: 'Transferência de arquivos concluída!' },
+            it: { app_title: 'Trasferimento file P2P', app_subtitle: 'Trasferimento file sicuro e veloce end-to-end<br>Due persone nella stessa stanza possono scambiarsi file', create_room: '✨ Crea stanza', join_room: '🔗 Entra nella stanza', back: '← Indietro', join: 'Entra', placeholder_room_code: 'Inserisci il codice stanza', room_number: 'Codice stanza', connected_to_room: 'Connesso alla stanza', copy_room: '📋 Copia codice', copy_link: '🔗 Copia link', drop_hint: 'Clicca o trascina i file qui per inviare', drop_sub: 'Supporta qualsiasi tipo di file, multipli', waiting_for_connection: 'In attesa di connessione...', waiting_for_peer: 'In attesa del partecipante...', peer_connected: 'Partecipante connesso, puoi inviare file', connected_can_send: 'Connesso, pronto per inviare', waiting_for_files: 'In attesa di file...', waiting_for_files_short: 'In attesa di file...', sending_files: 'Invio file...', sending_progress: 'Invio... {percent}%', send_complete: 'Invio completato!', receiving_files_count: 'Ricezione di {count} file...', receiving_file_info: '📥 Ricezione: {names} (totale {size})', receive_complete: 'Tutto ricevuto!', transfer_complete: 'Trasferimento completato!', all_sent: 'Tutti i file inviati!', all_received: 'Tutti i file ricevuti!', read_error: 'Errore nella lettura del file', connection_closed: 'Connessione chiusa', data_error: 'Errore di trasferimento dati', room_not_found: 'Stanza non trovata, controlla il codice', network_error: 'Errore di rete, riprova', room_conflict: 'Conflitto codice stanza, rigenerato', copy_success: 'Link copiato! Invia a un amico', link_copied: 'Link copiato!', remove_file: 'Rimuovi', download: '⬇ Scarica', restart: 'Ricomincia', receive_section: 'Ricevi', received_files: '✅ File ricevuti:', connecting_room: 'Connessione alla stanza...', join_status_error: 'Stanza non trovata', join_status_network: 'Errore di rete', transfer_complete_alert: 'Trasferimento file completato!' },
+            nl: { app_title: 'P2P-bestandsoverdracht', app_subtitle: 'Veilige en snelle end-to-end bestandsoverdracht<br>Twee personen in dezelfde kamer kunnen bestanden naar elkaar sturen', create_room: '✨ Kamer aanmaken', join_room: '🔗 Deelnemen aan kamer', back: '← Terug', join: 'Deelnemen', placeholder_room_code: 'Voer kamercode in', room_number: 'Kamercode', connected_to_room: 'Verbonden met kamer', copy_room: '📋 Code kopiëren', copy_link: '🔗 Link kopiëren', drop_hint: 'Klik of sleep bestanden hierheen om te verzenden', drop_sub: 'Ondersteunt elk bestandstype, meerdere', waiting_for_connection: 'Wachten op verbinding...', waiting_for_peer: 'Wachten op deelnemer...', peer_connected: 'Deelnemer verbonden, u kunt bestanden verzenden', connected_can_send: 'Verbonden, klaar om te verzenden', waiting_for_files: 'Wachten op bestanden...', waiting_for_files_short: 'Wachten op bestanden...', sending_files: 'Bestanden verzenden...', sending_progress: 'Verzenden... {percent}%', send_complete: 'Verzending voltooid!', receiving_files_count: '{count} bestanden ontvangen...', receiving_file_info: '📥 Ontvangen: {names} (totaal {size})', receive_complete: 'Alles ontvangen!', transfer_complete: 'Overdracht voltooid!', all_sent: 'Alle bestanden verzonden!', all_received: 'Alle bestanden ontvangen!', read_error: 'Fout bij het lezen van bestand', connection_closed: 'Verbinding gesloten', data_error: 'Fout bij gegevensoverdracht', room_not_found: 'Kamer niet gevonden, controleer de code', network_error: 'Netwerkfout, probeer opnieuw', room_conflict: 'Conflict met kamercode, opnieuw gegenereerd', copy_success: 'Link gekopieerd! Stuur naar een vriend', link_copied: 'Link gekopieerd!', remove_file: 'Verwijderen', download: '⬇ Downloaden', restart: 'Opnieuw starten', receive_section: 'Ontvangen', received_files: '✅ Ontvangen bestanden:', connecting_room: 'Verbinden met kamer...', join_status_error: 'Kamer niet gevonden', join_status_network: 'Netwerkfout', transfer_complete_alert: 'Bestandsoverdracht voltooid!' },
+            pl: { app_title: 'Transfer plików P2P', app_subtitle: 'Bezpieczny i szybki transfer plików end-to-end<br>Dwie osoby w tym samym pokoju mogą wysyłać sobie pliki', create_room: '✨ Utwórz pokój', join_room: '🔗 Dołącz do pokoju', back: '← Wstecz', join: 'Dołącz', placeholder_room_code: 'Wpisz kod pokoju', room_number: 'Kod pokoju', connected_to_room: 'Połączono z pokojem', copy_room: '📋 Kopiuj kod', copy_link: '🔗 Kopiuj link', drop_hint: 'Kliknij lub przeciągnij pliki tutaj, aby wysłać', drop_sub: 'Obsługuje dowolny typ plików, wiele plików', waiting_for_connection: 'Oczekiwanie na połączenie...', waiting_for_peer: 'Oczekiwanie na uczestnika...', peer_connected: 'Uczestnik połączony, możesz wysyłać pliki', connected_can_send: 'Połączono, gotowe do wysyłki', waiting_for_files: 'Oczekiwanie na pliki...', waiting_for_files_short: 'Oczekiwanie na pliki...', sending_files: 'Wysyłanie plików...', sending_progress: 'Wysyłanie... {percent}%', send_complete: 'Wysyłka zakończona!', receiving_files_count: 'Odbieranie {count} plików...', receiving_file_info: '📥 Odbieranie: {names} (łącznie {size})', receive_complete: 'Wszystko odebrane!', transfer_complete: 'Transfer zakończony!', all_sent: 'Wszystkie pliki wysłane!', all_received: 'Wszystkie pliki odebrane!', read_error: 'Błąd odczytu pliku', connection_closed: 'Połączenie zamknięte', data_error: 'Błąd przesyłania danych', room_not_found: 'Pokój nie znaleziony, sprawdź kod', network_error: 'Błąd sieci, spróbuj ponownie', room_conflict: 'Konflikt kodu pokoju, wygenerowano nowy', copy_success: 'Link skopiowany! Wyślij znajomemu', link_copied: 'Link skopiowany!', remove_file: 'Usuń', download: '⬇ Pobierz', restart: 'Uruchom ponownie', receive_section: 'Odbieranie', received_files: '✅ Odebrane pliki:', connecting_room: 'Łączenie z pokojem...', join_status_error: 'Pokój nie znaleziony', join_status_network: 'Błąd sieci', transfer_complete_alert: 'Transfer plików zakończony!' },
+            tr: { app_title: 'P2P Dosya Transferi', app_subtitle: 'Güvenli ve hızlı uçtan uca dosya transferi<br>Aynı odadaki iki kişi birbirine dosya gönderebilir', create_room: '✨ Oda Oluştur', join_room: '🔗 Odaya Katıl', back: '← Geri', join: 'Katıl', placeholder_room_code: 'Oda kodunu girin', room_number: 'Oda Kodu', connected_to_room: 'Odaya bağlanıldı', copy_room: '📋 Kodu Kopyala', copy_link: '🔗 Bağlantıyı Kopyala', drop_hint: 'Dosya göndermek için buraya tıklayın veya sürükleyin', drop_sub: 'Her dosya türünü destekler, birden fazla seçilebilir', waiting_for_connection: 'Bağlantı bekleniyor...', waiting_for_peer: 'Katılımcı bekleniyor...', peer_connected: 'Katılımcı bağlandı, dosya gönderebilirsiniz', connected_can_send: 'Bağlandı, göndermeye hazır', waiting_for_files: 'Dosyalar bekleniyor...', waiting_for_files_short: 'Dosyalar bekleniyor...', sending_files: 'Dosyalar gönderiliyor...', sending_progress: 'Gönderiliyor... %{percent}', send_complete: 'Gönderim tamamlandı!', receiving_files_count: '{count} dosya alınıyor...', receiving_file_info: '📥 Alınıyor: {names} (toplam {size})', receive_complete: 'Her şey alındı!', transfer_complete: 'Transfer tamamlandı!', all_sent: 'Tüm dosyalar gönderildi!', all_received: 'Tüm dosyalar alındı!', read_error: 'Dosya okunamadı', connection_closed: 'Bağlantı kapatıldı', data_error: 'Veri aktarım hatası', room_not_found: 'Oda bulunamadı, kodu kontrol edin', network_error: 'Ağ hatası, lütfen tekrar deneyin', room_conflict: 'Oda kodu çakışması, yeniden oluşturuldu', copy_success: 'Bağlantı kopyalandı! Arkadaşına gönder', link_copied: 'Bağlantı kopyalandı!', remove_file: 'Kaldır', download: '⬇ İndir', restart: 'Yeniden Başlat', receive_section: 'Al', received_files: '✅ Alınan dosyalar:', connecting_room: 'Odaya bağlanılıyor...', join_status_error: 'Oda bulunamadı', join_status_network: 'Ağ hatası', transfer_complete_alert: 'Dosya transferi tamamlandı!' },
+            vi: { app_title: 'Truyền file P2P', app_subtitle: 'Truyền file an toàn và nhanh chóng từ đầu cuối đến đầu cuối<br>Hai người trong cùng một phòng có thể gửi file cho nhau', create_room: '✨ Tạo phòng', join_room: '🔗 Tham gia phòng', back: '← Quay lại', join: 'Tham gia', placeholder_room_code: 'Nhập mã phòng', room_number: 'Mã phòng', connected_to_room: 'Đã kết nối với phòng', copy_room: '📋 Sao chép mã', copy_link: '🔗 Sao chép liên kết', drop_hint: 'Nhấp hoặc kéo thả file vào đây để gửi', drop_sub: 'Hỗ trợ mọi loại file, có thể chọn nhiều', waiting_for_connection: 'Đang chờ kết nối...', waiting_for_peer: 'Đang chờ người tham gia...', peer_connected: 'Người tham gia đã kết nối, bạn có thể gửi file', connected_can_send: 'Đã kết nối, sẵn sàng gửi', waiting_for_files: 'Đang chờ file...', waiting_for_files_short: 'Đang chờ file...', sending_files: 'Đang gửi file...', sending_progress: 'Đang gửi... {percent}%', send_complete: 'Gửi hoàn tất!', receiving_files_count: 'Đang nhận {count} file...', receiving_file_info: '📥 Đang nhận: {names} (tổng {size})', receive_complete: 'Đã nhận tất cả!', transfer_complete: 'Truyền hoàn tất!', all_sent: 'Đã gửi tất cả file!', all_received: 'Đã nhận tất cả file!', read_error: 'Đọc file thất bại', connection_closed: 'Kết nối đã đóng', data_error: 'Lỗi truyền dữ liệu', room_not_found: 'Không tìm thấy phòng, hãy kiểm tra mã', network_error: 'Lỗi mạng, vui lòng thử lại', room_conflict: 'Xung đột mã phòng, đã tạo lại', copy_success: 'Đã sao chép liên kết! Gửi cho bạn bè', link_copied: 'Đã sao chép liên kết!', remove_file: 'Gỡ bỏ', download: '⬇ Tải xuống', restart: 'Bắt đầu lại', receive_section: 'Nhận', received_files: '✅ File đã nhận:', connecting_room: 'Đang kết nối tới phòng...', join_status_error: 'Phòng không tồn tại', join_status_network: 'Lỗi mạng', transfer_complete_alert: 'Truyền file hoàn tất!' },
+            th: { app_title: 'ส่งไฟล์ P2P', app_subtitle: 'ส่งไฟล์แบบปลอดภัยและรวดเร็วจากต้นทางถึงปลายทาง<br>สองคนในห้องเดียวกันสามารถส่งไฟล์ถึงกันได้', create_room: '✨ สร้างห้อง', join_room: '🔗 เข้าร่วมห้อง', back: '← กลับ', join: 'เข้าร่วม', placeholder_room_code: 'กรอกรหัสห้อง', room_number: 'รหัสห้อง', connected_to_room: 'เชื่อมต่อกับห้องแล้ว', copy_room: '📋 คัดลอกรหัส', copy_link: '🔗 คัดลอกลิงก์', drop_hint: 'คลิกหรือลากไฟล์มาที่นี่เพื่อส่ง', drop_sub: 'รองรับไฟล์ทุกประเภท เลือกได้หลายไฟล์', waiting_for_connection: 'กำลังรอการเชื่อมต่อ...', waiting_for_peer: 'กำลังรอผู้เข้าร่วม...', peer_connected: 'ผู้เข้าร่วมเชื่อมต่อแล้ว คุณสามารถส่งไฟล์ได้', connected_can_send: 'เชื่อมต่อแล้ว พร้อมส่ง', waiting_for_files: 'กำลังรอไฟล์...', waiting_for_files_short: 'กำลังรอไฟล์...', sending_files: 'กำลังส่งไฟล์...', sending_progress: 'กำลังส่ง... {percent}%', send_complete: 'ส่งเสร็จแล้ว!', receiving_files_count: 'กำลังรับ {count} ไฟล์...', receiving_file_info: '📥 กำลังรับ: {names} (รวม {size})', receive_complete: 'รับทั้งหมดแล้ว!', transfer_complete: 'โอนเสร็จแล้ว!', all_sent: 'ส่งไฟล์ทั้งหมดแล้ว!', all_received: 'รับไฟล์ทั้งหมดแล้ว!', read_error: 'ไม่สามารถอ่านไฟล์ได้', connection_closed: 'การเชื่อมต่อถูกปิด', data_error: 'ข้อผิดพลาดในการส่งข้อมูล', room_not_found: 'ไม่พบห้อง โปรดตรวจสอบรหัส', network_error: 'ข้อผิดพลาดเครือข่าย โปรดลองอีกครั้ง', room_conflict: 'รหัสห้องขัดแย้งกัน สร้างใหม่แล้ว', copy_success: 'คัดลอกลิงก์แล้ว! ส่งให้เพื่อน', link_copied: 'คัดลอกลิงก์แล้ว!', remove_file: 'ลบ', download: '⬇ ดาวน์โหลด', restart: 'เริ่มใหม่', receive_section: 'รับ', received_files: '✅ ไฟล์ที่ได้รับ:', connecting_room: 'กำลังเชื่อมต่อห้อง...', join_status_error: 'ไม่พบห้อง', join_status_network: 'ข้อผิดพลาดเครือข่าย', transfer_complete_alert: 'โอนไฟล์เสร็จแล้ว!' },
+            id: { app_title: 'Transfer File P2P', app_subtitle: 'Transfer file yang aman dan cepat dari ujung ke ujung<br>Dua orang di ruangan yang sama dapat saling mengirim file', create_room: '✨ Buat Ruangan', join_room: '🔗 Gabung Ruangan', back: '← Kembali', join: 'Gabung', placeholder_room_code: 'Masukkan kode ruangan', room_number: 'Kode Ruangan', connected_to_room: 'Terhubung ke ruangan', copy_room: '📋 Salin Kode', copy_link: '🔗 Salin Tautan', drop_hint: 'Klik atau seret file ke sini untuk mengirim', drop_sub: 'Mendukung semua jenis file, bisa memilih banyak', waiting_for_connection: 'Menunggu koneksi...', waiting_for_peer: 'Menunggu peserta...', peer_connected: 'Peserta terhubung, Anda dapat mengirim file', connected_can_send: 'Terhubung, siap mengirim', waiting_for_files: 'Menunggu file...', waiting_for_files_short: 'Menunggu file...', sending_files: 'Mengirim file...', sending_progress: 'Mengirim... {percent}%', send_complete: 'Pengiriman selesai!', receiving_files_count: 'Menerima {count} file...', receiving_file_info: '📥 Menerima: {names} (total {size})', receive_complete: 'Semua diterima!', transfer_complete: 'Transfer selesai!', all_sent: 'Semua file terkirim!', all_received: 'Semua file diterima!', read_error: 'Gagal membaca file', connection_closed: 'Koneksi ditutup', data_error: 'Kesalahan transfer data', room_not_found: 'Ruangan tidak ditemukan, periksa kodenya', network_error: 'Kesalahan jaringan, silakan coba lagi', room_conflict: 'Konflik kode ruangan, dibuat ulang', copy_success: 'Tautan disalin! Kirim ke teman', link_copied: 'Tautan disalin!', remove_file: 'Hapus', download: '⬇ Unduh', restart: 'Mulai Ulang', receive_section: 'Terima', received_files: '✅ File yang diterima:', connecting_room: 'Menghubungkan ke ruangan...', join_status_error: 'Ruangan tidak ditemukan', join_status_network: 'Kesalahan jaringan', transfer_complete_alert: 'Transfer file selesai!' },
+            hi: { app_title: 'P2P फ़ाइल स्थानांतरण', app_subtitle: 'सुरक्षित और तेज़ एंड-टू-एंड फ़ाइल स्थानांतरण<br>एक ही कमरे में दो लोग एक-दूसरे को फ़ाइलें भेज सकते हैं', create_room: '✨ कमरा बनाएं', join_room: '🔗 कमरे में शामिल हों', back: '← वापस', join: 'शामिल हों', placeholder_room_code: 'कमरे का कोड दर्ज करें', room_number: 'कमरे का कोड', connected_to_room: 'कमरे से जुड़ा', copy_room: '📋 कोड कॉपी करें', copy_link: '🔗 लिंक कॉपी करें', drop_hint: 'फ़ाइलें भेजने के लिए यहां क्लिक करें या खींचें', drop_sub: 'किसी भी प्रकार की फ़ाइल, एकाधिक चुनें', waiting_for_connection: 'कनेक्शन की प्रतीक्षा हो रही है...', waiting_for_peer: 'प्रतिभागी की प्रतीक्षा हो रही है...', peer_connected: 'प्रतिभागी जुड़ गया, आप फ़ाइलें भेज सकते हैं', connected_can_send: 'जुड़ा हुआ, भेजने के लिए तैयार', waiting_for_files: 'फ़ाइलों की प्रतीक्षा हो रही है...', waiting_for_files_short: 'फ़ाइलों की प्रतीक्षा...', sending_files: 'फ़ाइलें भेजी जा रही हैं...', sending_progress: 'भेजा जा रहा है... {percent}%', send_complete: 'भेजना पूरा हुआ!', receiving_files_count: '{count} फ़ाइलें प्राप्त हो रही हैं...', receiving_file_info: '📥 प्राप्त हो रहा है: {names} (कुल {size})', receive_complete: 'सब कुछ प्राप्त हुआ!', transfer_complete: 'स्थानांतरण पूरा हुआ!', all_sent: 'सभी फ़ाइलें भेज दी गईं!', all_received: 'सभी फ़ाइलें प्राप्त हो गईं!', read_error: 'फ़ाइल पढ़ने में विफल', connection_closed: 'कनेक्शन बंद हुआ', data_error: 'डेटा स्थानांतरण त्रुटि', room_not_found: 'कमरा नहीं मिला, कृपया कोड जांचें', network_error: 'नेटवर्क त्रुटि, कृपया पुनः प्रयास करें', room_conflict: 'कमरे का कोड विरोध, फिर से बनाया गया', copy_success: 'लिंक कॉपी किया गया! किसी मित्र को भेजें', link_copied: 'लिंक कॉपी किया गया!', remove_file: 'हटाएं', download: '⬇ डाउनलोड', restart: 'पुनः आरंभ करें', receive_section: 'प्राप्त करें', received_files: '✅ प्राप्त फ़ाइलें:', connecting_room: 'कमरे से जुड़ रहा है...', join_status_error: 'कमरा नहीं मिला', join_status_network: 'नेटवर्क त्रुटि', transfer_complete_alert: 'फ़ाइल स्थानांतरण पूरा हुआ!' }
+        };
 
-            function getInitialTheme() {
-                return localStorage.getItem('theme') || 'light';
-            }
+        // ============ 全局变量 ============
+        let currentLang = localStorage.getItem('lang') || 'zh';
+        let peer = null;
+        let conn = null;
+        let appState = 'idle';
+        let roomId = '';
+        let selectedFiles = [];
+        let totalBytesSent = 0;
+        let totalBytesToSend = 0;
+        let totalBytesReceived = 0;
+        let totalBytesToReceive = 0;
+        let lastSpeedUpdate = 0;
+        let bytesSinceLastUpdate = 0;
+        let receivedFileChunks = {};
+        let receivedFileCount = 0;
+        let expectedFileCount = 0;
+        let transferComplete = false;
+        let isCreator = false;
+        let currentSendStatus = null;
+        let currentReceiveStatus = null;
 
-            function applyTheme(theme) {
-                htmlElement.setAttribute('data-theme', theme);
-                localStorage.setItem('theme', theme);
-                themeToggleBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
+        // ============ DOM 引用 ============
+        const $ = (sel) => document.querySelector(sel);
+        const themeToggleBtn = $('#themeToggle');
+        const langSelect = $('#langSelect');
+        const screenIdle = $('#screenIdle');
+        const screenJoin = $('#screenJoin');
+        const screenRoom = $('#screenRoom');
+        const roomCodeDisplay = $('#roomCodeDisplay');
+        const roomInfoLabel = $('#roomInfoLabel');
+        const roomCodeInput = $('#roomCodeInput');
+        const fileInput = $('#fileInput');
+        const fileList = $('#fileList');
+        const dropZone = $('#dropZone');
+        const sendStatus = $('#sendStatus');
+        const sendProgress = $('#sendProgress');
+        const sendProgressBar = $('#sendProgressBar');
+        const sendProgressLabel = $('#sendProgressLabel');
+        const sendSpeed = $('#sendSpeed');
+        const receiveStatus = $('#receiveStatus');
+        const receiveProgress = $('#receiveProgress');
+        const receiveProgressBar = $('#receiveProgressBar');
+        const receiveProgressLabel = $('#receiveProgressLabel');
+        const receiveSpeed = $('#receiveSpeed');
+        const receiveFileInfo = $('#receiveFileInfo');
+        const receivedFiles = $('#receivedFiles');
+        const receivedFileList = $('#receivedFileList');
+        const globalAlert = $('#globalAlert');
+        const joinStatus = $('#joinStatus');
+        const btnCopyRoom = $('#btnCopyRoom');
+        const htmlElement = document.documentElement;
+
+        // ============ 工具函数 ============
+        function t(key, vars) {
+            let text = translations[currentLang]?.[key] || translations.zh[key] || key;
+            if (vars) {
+                Object.keys(vars).forEach(varKey => {
+                    text = text.replace(`{${varKey}}`, vars[varKey]);
+                });
             }
-            applyTheme(getInitialTheme());
-            themeToggleBtn.addEventListener('click', () => {
-                const newTheme = htmlElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-                applyTheme(newTheme);
+            return text;
+        }
+
+        function applyTheme(theme) {
+            htmlElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            themeToggleBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
+        }
+        applyTheme(localStorage.getItem('theme') || 'light');
+        themeToggleBtn.addEventListener('click', () => {
+            const newTheme = htmlElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            applyTheme(newTheme);
+        });
+
+        function applyLanguage() {
+            if (currentLang === 'ar') {
+                htmlElement.setAttribute('dir', 'rtl');
+            } else {
+                htmlElement.setAttribute('dir', 'ltr');
+            }
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (key === 'app_subtitle') {
+                    el.innerHTML = t(key);
+                } else {
+                    el.textContent = t(key);
+                }
             });
-
-            // ============ 配置 ============
-            const PEER_SERVER = { host: '0.peerjs.com', port: 443, secure: true };
-            const CHUNK_SIZE = 65536;
-            const ROOM_ID_LENGTH = 6;
-            const ROOM_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-
-            // ============ 状态 ============
-            let peer = null;
-            let conn = null;
-            let appState = 'idle'; // idle | created | joining | room
-            let roomId = '';
-            let selectedFiles = [];
-            let transferStartTime = 0;
-            let totalBytesSent = 0;
-            let totalBytesToSend = 0;
-            let totalBytesReceived = 0;
-            let totalBytesToReceive = 0;
-            let lastSpeedUpdate = 0;
-            let bytesSinceLastUpdate = 0;
-            let receivedFileChunks = {};
-            let receivedFileCount = 0;
-            let expectedFileCount = 0;
-            let transferComplete = false;
-            let isCreator = false;
-
-            // ============ DOM 引用 ============
-            const $ = (sel) => document.querySelector(sel);
-            const screenIdle = $('#screenIdle');
-            const screenJoin = $('#screenJoin');
-            const screenRoom = $('#screenRoom');
-            const roomCodeDisplay = $('#roomCodeDisplay');
-            const roomInfoLabel = $('#roomInfoLabel');
-            const roomCodeInput = $('#roomCodeInput');
-            const fileInput = $('#fileInput');
-            const fileList = $('#fileList');
-            const dropZone = $('#dropZone');
-            const sendStatus = $('#sendStatus');
-            const sendProgress = $('#sendProgress');
-            const sendProgressBar = $('#sendProgressBar');
-            const sendProgressLabel = $('#sendProgressLabel');
-            const sendSpeed = $('#sendSpeed');
-            const receiveStatus = $('#receiveStatus');
-            const receiveProgress = $('#receiveProgress');
-            const receiveProgressBar = $('#receiveProgressBar');
-            const receiveProgressLabel = $('#receiveProgressLabel');
-            const receiveSpeed = $('#receiveSpeed');
-            const receiveFileInfo = $('#receiveFileInfo');
-            const receivedFiles = $('#receivedFiles');
-            const receivedFileList = $('#receivedFileList');
-            const globalAlert = $('#globalAlert');
-            const qrWrapper = $('#qrWrapper');
-            const qrImage = $('#qrImage');
-            const joinStatus = $('#joinStatus');
-            const btnCopyRoom = $('#btnCopyRoom');
-
-            // ============ 工具函数 ============
-            function generateRoomId() {
-                let result = '';
-                for (let i = 0; i < ROOM_ID_LENGTH; i++) {
-                    result += ROOM_CHARS[Math.floor(Math.random() * ROOM_CHARS.length)];
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                el.setAttribute('placeholder', t(key));
+            });
+            document.querySelectorAll('#fileList .file-remove').forEach(btn => {
+                btn.title = t('remove_file');
+            });
+            document.querySelectorAll('#receivedFileList .btn-success').forEach(btn => {
+                btn.textContent = t('download');
+            });
+            if (currentSendStatus) {
+                updateSendStatus(currentSendStatus.status, currentSendStatus.key, currentSendStatus.vars);
+            }
+            if (currentReceiveStatus) {
+                updateReceiveStatus(currentReceiveStatus.status, currentReceiveStatus.key, currentReceiveStatus.vars);
+            }
+            if (roomInfoLabel) {
+                if (appState === 'room' && isCreator) {
+                    roomInfoLabel.textContent = t('room_number');
+                } else if (appState === 'room' && !isCreator) {
+                    roomInfoLabel.textContent = t('connected_to_room');
                 }
-                return result;
             }
+        }
+        langSelect.value = currentLang;
+        langSelect.addEventListener('change', function() {
+            currentLang = this.value;
+            localStorage.setItem('lang', currentLang);
+            applyLanguage();
+        });
 
-            function formatSize(bytes) {
-                if (bytes === 0) return '0 B';
-                const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-                const i = Math.floor(Math.log(bytes) / Math.log(1024));
-                return (bytes / Math.pow(1024, i)).toFixed(i >= 2 ? 2 : 1) + ' ' + units[i];
+        const PEER_SERVER = { host: '0.peerjs.com', port: 443, secure: true };
+        const CHUNK_SIZE = 65536;
+        const ROOM_ID_LENGTH = 6;
+        const ROOM_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+
+        function generateRoomId() {
+            let result = '';
+            for (let i = 0; i < ROOM_ID_LENGTH; i++) {
+                result += ROOM_CHARS[Math.floor(Math.random() * ROOM_CHARS.length)];
             }
+            return result;
+        }
 
-            function formatSpeed(bytesPerSec) {
-                if (bytesPerSec < 1024) return bytesPerSec.toFixed(0) + ' B/s';
-                if (bytesPerSec < 1024 * 1024) return (bytesPerSec / 1024).toFixed(1) + ' KB/s';
-                return (bytesPerSec / (1024 * 1024)).toFixed(2) + ' MB/s';
-            }
+        function formatSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(1024));
+            return (bytes / Math.pow(1024, i)).toFixed(i >= 2 ? 2 : 1) + ' ' + units[i];
+        }
 
-            function showAlert(message, type = 'info') {
-                globalAlert.className = 'alert alert-' + type + ' fade-in';
-                globalAlert.textContent = message;
-                globalAlert.classList.remove('hidden');
-                clearTimeout(globalAlert._timeout);
-                globalAlert._timeout = setTimeout(() => globalAlert.classList.add('hidden'), 4000);
-            }
+        function formatSpeed(bytesPerSec) {
+            if (bytesPerSec < 1024) return bytesPerSec.toFixed(0) + ' B/s';
+            if (bytesPerSec < 1024 * 1024) return (bytesPerSec / 1024).toFixed(1) + ' KB/s';
+            return (bytesPerSec / (1024 * 1024)).toFixed(2) + ' MB/s';
+        }
 
-            function hideAllScreens() {
-                [screenIdle, screenJoin, screenRoom].forEach(s => s.classList.add('hidden'));
-            }
+        function showAlert(message, type = 'info') {
+            globalAlert.className = 'alert alert-' + type + ' fade-in';
+            globalAlert.textContent = message;
+            globalAlert.classList.remove('hidden');
+            clearTimeout(globalAlert._timeout);
+            globalAlert._timeout = setTimeout(() => globalAlert.classList.add('hidden'), 4000);
+        }
 
-            function showScreen(screen) {
-                hideAllScreens();
-                screen.classList.remove('hidden');
-                screen.classList.add('fade-in');
-            }
+        function hideAllScreens() {
+            [screenIdle, screenJoin, screenRoom].forEach(s => s.classList.add('hidden'));
+        }
 
-            function cleanupPeer() {
-                if (conn) { try { conn.close(); } catch (e) {} conn = null; }
-                if (peer) { try { peer.destroy(); } catch (e) {} peer = null; }
-            }
+        function showScreen(screen) {
+            hideAllScreens();
+            screen.classList.remove('hidden');
+            screen.classList.add('fade-in');
+        }
 
-            function resetAll() {
-                cleanupPeer();
-                appState = 'idle';
-                roomId = '';
-                selectedFiles = [];
-                isCreator = false;
-                transferStartTime = 0;
-                totalBytesSent = 0;
-                totalBytesToSend = 0;
-                totalBytesReceived = 0;
-                totalBytesToReceive = 0;
-                lastSpeedUpdate = 0;
-                bytesSinceLastUpdate = 0;
-                receivedFileChunks = {};
-                receivedFileCount = 0;
-                expectedFileCount = 0;
-                transferComplete = false;
-                fileInput.value = '';
-                fileList.innerHTML = '';
-                fileList.classList.add('hidden');
-                sendProgress.classList.add('hidden');
-                sendProgressBar.style.width = '0%';
-                sendProgressBar.classList.remove('complete');
-                sendSpeed.textContent = '';
-                receiveProgress.classList.add('hidden');
-                receiveProgressBar.style.width = '0%';
-                receiveProgressBar.classList.remove('complete');
-                receiveSpeed.textContent = '';
-                receiveFileInfo.classList.add('hidden');
-                receivedFiles.classList.add('hidden');
-                receivedFileList.innerHTML = '';
-                joinStatus.classList.add('hidden');
-                globalAlert.classList.add('hidden');
-                roomCodeInput.value = '';
-                btnCopyRoom.classList.remove('copied');
-                showScreen(screenIdle);
-            }
+        function cleanupPeer() {
+            if (conn) { try { conn.close(); } catch (e) {} conn = null; }
+            if (peer) { try { peer.destroy(); } catch (e) {} peer = null; }
+        }
 
-            // ============ 创建房间 ============
-            function createRoom() {
-                resetAll();
-                roomId = generateRoomId();
-                isCreator = true;
-                appState = 'room';
-                showScreen(screenRoom);
-                roomInfoLabel.textContent = '房间号';
-                roomCodeDisplay.textContent = roomId;
-                // 更新二维码
-                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(roomId)}&bgcolor=ffffff&color=4f6ef7`;
-                // 注：原HTML中没有qrWrapper和qrImage，这里需要检查，为了兼容，我们动态创建？
-                // 实际上原来的screenCreated中有qrWrapper，但合并后我们把它删了，这里我们可以忽略二维码，或重新加上。
-                // 简单起见，我们不显示二维码，或者保留一个隐藏区域？用户要求不一定需要二维码，但原代码有，我们可以保留。
-                // 为了完整，我们添加一个隐藏的二维码区域，或者不显示。由于用户没要求，我们省略二维码。
-                // 但为了功能完整，可以加入二维码显示。
-                // 为满足原功能，我们在房间信息区添加二维码图像（原本存在）
-                // 但由于我们合并了屏幕，需要动态添加？我们可以直接在HTML中保留qrWrapper，但原来没有，现在我们加上。
-                // 为了简单，我们在这里直接更新一个可能存在的img，如果没有则忽略。
-                const existingQr = document.getElementById('qrImage');
-                if (existingQr) existingQr.src = qrUrl;
-                // 初始化Peer
-                initPeer(roomId);
-                updateSendStatus('connecting', '等待对方连接...');
-                updateReceiveStatus('connecting', '等待对方传输...');
-            }
+        function resetAll() {
+            cleanupPeer();
+            appState = 'idle';
+            roomId = '';
+            selectedFiles = [];
+            isCreator = false;
+            totalBytesSent = 0;
+            totalBytesToSend = 0;
+            totalBytesReceived = 0;
+            totalBytesToReceive = 0;
+            lastSpeedUpdate = 0;
+            bytesSinceLastUpdate = 0;
+            receivedFileChunks = {};
+            receivedFileCount = 0;
+            expectedFileCount = 0;
+            transferComplete = false;
+            fileInput.value = '';
+            fileList.innerHTML = '';
+            fileList.classList.add('hidden');
+            sendProgress.classList.add('hidden');
+            sendProgressBar.style.width = '0%';
+            sendProgressBar.classList.remove('complete');
+            sendSpeed.textContent = '';
+            receiveProgress.classList.add('hidden');
+            receiveProgressBar.style.width = '0%';
+            receiveProgressBar.classList.remove('complete');
+            receiveSpeed.textContent = '';
+            receiveFileInfo.classList.add('hidden');
+            receivedFiles.classList.add('hidden');
+            receivedFileList.innerHTML = '';
+            joinStatus.classList.add('hidden');
+            globalAlert.classList.add('hidden');
+            roomCodeInput.value = '';
+            btnCopyRoom.classList.remove('copied');
+            currentSendStatus = null;
+            currentReceiveStatus = null;
+            showScreen(screenIdle);
+            applyLanguage();
+        }
 
-            function initPeer(peerId) {
-                cleanupPeer();
-                peer = new Peer(peerId, {
-                    host: PEER_SERVER.host,
-                    port: PEER_SERVER.port,
-                    secure: PEER_SERVER.secure,
-                    debug: 0,
-                });
-                peer.on('open', (id) => {
-                    if (isCreator) {
-                        updateSendStatus('connecting', '等待对方连接...');
-                    }
-                });
-                peer.on('connection', (incomingConn) => {
-                    if (isCreator && appState === 'room') {
-                        conn = incomingConn;
-                        setupConnection();
-                        updateSendStatus('connected', '对方已连接，可以发送文件');
-                    }
-                });
-                peer.on('error', (err) => {
-                    if (err.type === 'unavailable-id') {
-                        roomId = generateRoomId();
-                        roomCodeDisplay.textContent = roomId;
-                        initPeer(roomId);
-                        showAlert('房间号冲突，已重新生成', 'warning');
-                    } else if (err.type === 'peer-unavailable') {
-                        showAlert('无法连接到对方，请确认房间号正确', 'error');
-                        updateSendStatus('error', '连接失败');
-                    } else if (err.type === 'network' || err.type === 'server-error') {
-                        showAlert('网络连接问题，请检查网络后重试', 'error');
-                    }
-                });
-                peer.on('disconnected', () => {
-                    if (!transferComplete && peer && !peer.destroyed) peer.reconnect();
-                });
-            }
+        // ============ 房间管理 ============
+        function createRoom() {
+            resetAll();
+            roomId = generateRoomId();
+            isCreator = true;
+            appState = 'room';
+            showScreen(screenRoom);
+            roomInfoLabel.textContent = t('room_number');
+            roomCodeDisplay.textContent = roomId;
+            initPeer(roomId);
+            updateSendStatus('connecting', 'waiting_for_peer');
+            updateReceiveStatus('connecting', 'waiting_for_files');
+        }
 
-            // ============ 加入房间 ============
-            function showJoinScreen() {
-                resetAll();
-                appState = 'joining';
-                showScreen(screenJoin);
-                roomCodeInput.value = '';
-                roomCodeInput.focus();
-                joinStatus.classList.add('hidden');
-            }
-
-            function goBackToIdle() {
-                resetAll();
-                showScreen(screenIdle);
-            }
-
-            function joinRoom() {
-                const inputCode = roomCodeInput.value.trim().toUpperCase();
-                if (!inputCode || inputCode.length < 3) {
-                    showAlert('请输入有效的房间号', 'warning');
-                    return;
+        function initPeer(peerId) {
+            cleanupPeer();
+            peer = new Peer(peerId, {
+                host: PEER_SERVER.host,
+                port: PEER_SERVER.port,
+                secure: PEER_SERVER.secure,
+                debug: 0,
+            });
+            peer.on('open', (id) => {
+                if (isCreator) {
+                    updateSendStatus('connecting', 'waiting_for_peer');
                 }
-                roomId = inputCode;
-                isCreator = false;
-                appState = 'room';
-                showScreen(screenRoom);
-                roomInfoLabel.textContent = '已连接到房间';
-                roomCodeDisplay.textContent = roomId;
-                updateSendStatus('connecting', '正在连接...');
-                updateReceiveStatus('connecting', '等待对方传输...');
-                cleanupPeer();
-                peer = new Peer({
-                    host: PEER_SERVER.host,
-                    port: PEER_SERVER.port,
-                    secure: PEER_SERVER.secure,
-                    debug: 0,
-                });
-                peer.on('open', () => {
-                    conn = peer.connect(roomId, { reliable: true, serialization: 'binary' });
+            });
+            peer.on('connection', (incomingConn) => {
+                if (isCreator && appState === 'room') {
+                    conn = incomingConn;
                     setupConnection();
-                });
-                peer.on('error', (err) => {
-                    if (err.type === 'peer-unavailable') {
-                        showAlert('找不到该房间，请确认房间号是否正确', 'error');
-                        updateSendStatus('error', '房间不存在');
-                    } else if (err.type === 'network' || err.type === 'server-error') {
-                        showAlert('网络连接问题，请检查网络后重试', 'error');
-                    }
-                });
-                peer.on('disconnected', () => {
-                    if (!transferComplete && peer && !peer.destroyed) peer.reconnect();
-                });
-            }
-
-            // ============ 连接设置 ============
-            function setupConnection() {
-                if (!conn) return;
-                conn.on('open', () => {
-                    appState = 'room';
-                    updateSendStatus('connected', '已连接，可以发送文件');
-                    updateReceiveStatus('connected', '等待对方传输文件...');
-                    if (selectedFiles.length > 0) {
-                        startSendingFiles();
-                    }
-                });
-                conn.on('data', (data) => handleIncomingData(data));
-                conn.on('close', () => {
-                    if (!transferComplete) {
-                        showAlert('连接已关闭', 'warning');
-                        updateSendStatus('error', '连接已关闭');
-                    }
-                });
-                conn.on('error', () => showAlert('数据传输错误', 'error'));
-            }
-
-            // ============ 数据处理 ============
-            function handleIncomingData(data) {
-                if (!(data instanceof ArrayBuffer)) {
-                    if (data instanceof Uint8Array) data = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
-                    else if (typeof data === 'object' && data !== null) {
-                        try { data = new TextEncoder().encode(JSON.stringify(data)).buffer; } catch (e) { return; }
-                    } else return;
+                    updateSendStatus('connected', 'peer_connected');
                 }
-                const view = new DataView(data);
-                if (data.byteLength < 1) return;
-                const msgType = view.getUint8(0);
-                if (msgType === 0) {
-                    const jsonStr = new TextDecoder().decode(new Uint8Array(data, 1));
-                    try { handleMetadata(JSON.parse(jsonStr)); } catch (e) {}
-                } else if (msgType === 1) {
-                    if (data.byteLength < 13) return;
-                    handleFileChunk(view.getUint32(1, false), view.getUint32(5, false), view.getUint32(9, false), new Uint8Array(data, 13));
-                } else if (msgType === 2) {
-                    const jsonStr = new TextDecoder().decode(new Uint8Array(data, 1));
-                    try { handleTransferComplete(JSON.parse(jsonStr)); } catch (e) {}
+            });
+            peer.on('error', (err) => {
+                if (err.type === 'unavailable-id') {
+                    roomId = generateRoomId();
+                    roomCodeDisplay.textContent = roomId;
+                    initPeer(roomId);
+                    showAlert(t('room_conflict'), 'warning');
+                } else if (err.type === 'peer-unavailable') {
+                    showAlert(t('room_not_found'), 'error');
+                    updateSendStatus('error', 'room_not_found');
+                } else if (err.type === 'network' || err.type === 'server-error') {
+                    showAlert(t('network_error'), 'error');
                 }
-            }
+            });
+            peer.on('disconnected', () => {
+                if (!transferComplete && peer && !peer.destroyed) peer.reconnect();
+            });
+        }
 
-            function handleMetadata(meta) {
-                expectedFileCount = meta.files ? meta.files.length : 0;
-                totalBytesToReceive = meta.totalSize || 0;
-                receivedFileChunks = {};
-                receivedFileCount = 0;
-                totalBytesReceived = 0;
-                transferStartTime = Date.now();
-                lastSpeedUpdate = Date.now();
-                bytesSinceLastUpdate = 0;
-                transferComplete = false;
-                if (meta.files) {
-                    meta.files.forEach((f, i) => {
-                        receivedFileChunks[i] = {
-                            chunks: new Array(f.totalChunks || 1),
-                            totalChunks: f.totalChunks || 1,
-                            name: f.name || 'unknown_file',
-                            size: f.size || 0,
-                            mime: f.type || 'application/octet-stream',
-                            receivedChunks: 0,
-                        };
-                    });
+        function showJoinScreen() {
+            resetAll();
+            appState = 'joining';
+            showScreen(screenJoin);
+            roomCodeInput.value = '';
+            roomCodeInput.focus();
+            joinStatus.classList.add('hidden');
+            applyLanguage();
+        }
+
+        function goBackToIdle() {
+            resetAll();
+        }
+
+        function joinRoom() {
+            const inputCode = roomCodeInput.value.trim().toUpperCase();
+            if (!inputCode || inputCode.length < 3) {
+                showAlert(t('room_not_found'), 'warning');
+                return;
+            }
+            roomId = inputCode;
+            isCreator = false;
+            appState = 'room';
+            showScreen(screenRoom);
+            roomInfoLabel.textContent = t('connected_to_room');
+            roomCodeDisplay.textContent = roomId;
+            updateSendStatus('connecting', 'connecting_room');
+            updateReceiveStatus('connecting', 'waiting_for_files');
+            cleanupPeer();
+            peer = new Peer({
+                host: PEER_SERVER.host,
+                port: PEER_SERVER.port,
+                secure: PEER_SERVER.secure,
+                debug: 0,
+            });
+            peer.on('open', () => {
+                conn = peer.connect(roomId, { reliable: true, serialization: 'binary' });
+                setupConnection();
+            });
+            peer.on('error', (err) => {
+                if (err.type === 'peer-unavailable') {
+                    showAlert(t('room_not_found'), 'error');
+                    updateSendStatus('error', 'join_status_error');
+                } else if (err.type === 'network' || err.type === 'server-error') {
+                    showAlert(t('network_error'), 'error');
                 }
-                updateReceiveStatus('transferring', `正在接收 ${expectedFileCount} 个文件...`);
-                receiveProgress.classList.remove('hidden');
-                receiveFileInfo.classList.remove('hidden');
-                receiveFileInfo.className = 'alert alert-info';
-                receiveFileInfo.textContent = `📥 接收文件：${meta.files.map(f => f.name).join(', ')}（共 ${formatSize(meta.totalSize || 0)}）`;
-                receivedFiles.classList.add('hidden');
-                updateReceiveProgress(0);
-            }
+            });
+            peer.on('disconnected', () => {
+                if (!transferComplete && peer && !peer.destroyed) peer.reconnect();
+            });
+        }
 
-            function handleFileChunk(fileIndex, chunkIndex, totalChunks, chunkData) {
-                if (!receivedFileChunks[fileIndex]) {
-                    receivedFileChunks[fileIndex] = {
-                        chunks: new Array(totalChunks),
-                        totalChunks: totalChunks,
-                        name: `file_${fileIndex}`,
-                        size: 0,
-                        mime: 'application/octet-stream',
+        function setupConnection() {
+            if (!conn) return;
+            conn.on('open', () => {
+                appState = 'room';
+                updateSendStatus('connected', 'connected_can_send');
+                updateReceiveStatus('connected', 'waiting_for_files');
+                if (selectedFiles.length > 0) {
+                    startSendingFiles();
+                }
+            });
+            conn.on('data', (data) => handleIncomingData(data));
+            conn.on('close', () => {
+                if (!transferComplete) {
+                    showAlert(t('connection_closed'), 'warning');
+                    updateSendStatus('error', 'connection_closed');
+                }
+            });
+            conn.on('error', () => showAlert(t('data_error'), 'error'));
+        }
+
+        // ============ 文件传输 ============
+        function handleIncomingData(data) {
+            if (!(data instanceof ArrayBuffer)) {
+                if (data instanceof Uint8Array) data = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+                else if (typeof data === 'object' && data !== null) {
+                    try { data = new TextEncoder().encode(JSON.stringify(data)).buffer; } catch (e) { return; }
+                } else return;
+            }
+            const view = new DataView(data);
+            if (data.byteLength < 1) return;
+            const msgType = view.getUint8(0);
+            if (msgType === 0) {
+                const jsonStr = new TextDecoder().decode(new Uint8Array(data, 1));
+                try { handleMetadata(JSON.parse(jsonStr)); } catch (e) {}
+            } else if (msgType === 1) {
+                if (data.byteLength < 13) return;
+                handleFileChunk(view.getUint32(1, false), view.getUint32(5, false), view.getUint32(9, false), new Uint8Array(data, 13));
+            } else if (msgType === 2) {
+                const jsonStr = new TextDecoder().decode(new Uint8Array(data, 1));
+                try { handleTransferComplete(JSON.parse(jsonStr)); } catch (e) {}
+            }
+        }
+
+        function handleMetadata(meta) {
+            expectedFileCount = meta.files ? meta.files.length : 0;
+            totalBytesToReceive = meta.totalSize || 0;
+            receivedFileChunks = {};
+            receivedFileCount = 0;
+            totalBytesReceived = 0;
+            lastSpeedUpdate = Date.now();
+            bytesSinceLastUpdate = 0;
+            transferComplete = false;
+            if (meta.files) {
+                meta.files.forEach((f, i) => {
+                    receivedFileChunks[i] = {
+                        chunks: new Array(f.totalChunks || 1),
+                        totalChunks: f.totalChunks || 1,
+                        name: f.name || 'unknown_file',
+                        size: f.size || 0,
+                        mime: f.type || 'application/octet-stream',
                         receivedChunks: 0,
                     };
-                }
-                const fileInfo = receivedFileChunks[fileIndex];
-                if (fileInfo.totalChunks < totalChunks) {
-                    const newChunks = new Array(totalChunks);
-                    for (let i = 0; i < fileInfo.chunks.length; i++) newChunks[i] = fileInfo.chunks[i];
-                    fileInfo.chunks = newChunks;
-                    fileInfo.totalChunks = totalChunks;
-                }
-                if (!fileInfo.chunks[chunkIndex]) {
-                    fileInfo.chunks[chunkIndex] = chunkData;
-                    fileInfo.receivedChunks++;
-                    totalBytesReceived += chunkData.byteLength;
-                }
-                const now = Date.now();
-                const elapsed = (now - lastSpeedUpdate) / 1000;
-                bytesSinceLastUpdate += chunkData.byteLength;
-                if (elapsed >= 1.0) {
-                    receiveSpeed.textContent = formatSpeed(bytesSinceLastUpdate / elapsed);
-                    bytesSinceLastUpdate = 0;
-                    lastSpeedUpdate = now;
-                }
-                if (totalBytesToReceive > 0) updateReceiveProgress(Math.min(100, Math.round((totalBytesReceived / totalBytesToReceive) * 100)));
-                if (fileInfo.receivedChunks >= fileInfo.totalChunks) assembleAndDownloadFile(fileIndex);
+                });
             }
+            updateReceiveStatus('transferring', 'receiving_files_count', { count: expectedFileCount });
+            receiveProgress.classList.remove('hidden');
+            receiveFileInfo.classList.remove('hidden');
+            receiveFileInfo.className = 'alert alert-info';
+            const names = meta.files.map(f => f.name).join(', ');
+            const sizeText = formatSize(meta.totalSize || 0);
+            receiveFileInfo.textContent = t('receiving_file_info', { names: names, size: sizeText });
+            receivedFiles.classList.add('hidden');
+            updateReceiveProgress(0);
+        }
 
-            function handleTransferComplete() {
+        function handleFileChunk(fileIndex, chunkIndex, totalChunks, chunkData) {
+            if (!receivedFileChunks[fileIndex]) {
+                receivedFileChunks[fileIndex] = {
+                    chunks: new Array(totalChunks),
+                    totalChunks: totalChunks,
+                    name: `file_${fileIndex}`,
+                    size: 0,
+                    mime: 'application/octet-stream',
+                    receivedChunks: 0,
+                };
+            }
+            const fileInfo = receivedFileChunks[fileIndex];
+            if (fileInfo.totalChunks < totalChunks) {
+                const newChunks = new Array(totalChunks);
+                for (let i = 0; i < fileInfo.chunks.length; i++) newChunks[i] = fileInfo.chunks[i];
+                fileInfo.chunks = newChunks;
+                fileInfo.totalChunks = totalChunks;
+            }
+            if (!fileInfo.chunks[chunkIndex]) {
+                fileInfo.chunks[chunkIndex] = chunkData;
+                fileInfo.receivedChunks++;
+                totalBytesReceived += chunkData.byteLength;
+            }
+            const now = Date.now();
+            const elapsed = (now - lastSpeedUpdate) / 1000;
+            bytesSinceLastUpdate += chunkData.byteLength;
+            if (elapsed >= 1.0) {
+                receiveSpeed.textContent = formatSpeed(bytesSinceLastUpdate / elapsed);
+                bytesSinceLastUpdate = 0;
+                lastSpeedUpdate = now;
+            }
+            if (totalBytesToReceive > 0) updateReceiveProgress(Math.min(100, Math.round((totalBytesReceived / totalBytesToReceive) * 100)));
+            if (fileInfo.receivedChunks >= fileInfo.totalChunks) assembleAndDownloadFile(fileIndex);
+        }
+
+        function handleTransferComplete() {
+            transferComplete = true;
+            updateReceiveStatus('complete', 'transfer_complete');
+            receiveProgressBar.style.width = '100%';
+            receiveProgressBar.classList.add('complete');
+            receiveSpeed.textContent = '';
+            receiveFileInfo.className = 'alert alert-success';
+            receiveFileInfo.textContent = t('transfer_complete_alert');
+            receivedFiles.classList.remove('hidden');
+            showAlert(t('transfer_complete_alert'), 'success');
+        }
+
+        function assembleAndDownloadFile(fileIndex) {
+            const fileInfo = receivedFileChunks[fileIndex];
+            if (!fileInfo || fileInfo._assembled) return;
+            fileInfo._assembled = true;
+            const totalLength = fileInfo.chunks.reduce((sum, chunk) => sum + (chunk ? chunk.byteLength : 0), 0);
+            const assembled = new Uint8Array(totalLength);
+            let offset = 0;
+            for (let i = 0; i < fileInfo.totalChunks; i++) {
+                if (fileInfo.chunks[i]) { assembled.set(fileInfo.chunks[i], offset); offset += fileInfo.chunks[i].byteLength; }
+            }
+            const blob = new Blob([assembled], { type: fileInfo.mime });
+            const url = URL.createObjectURL(blob);
+            const li = document.createElement('li');
+            li.innerHTML = `<span class="file-icon">📄</span><div class="file-info"><div class="file-name">${escapeHtml(fileInfo.name)}</div><div class="file-size">${formatSize(fileInfo.size || totalLength)}</div></div><button class="btn btn-success btn-sm" onclick="downloadFile('${url.replace(/'/g, "\\'")}', '${escapeHtml(fileInfo.name).replace(/'/g, "\\'")}')">${t('download')}</button>`;
+            receivedFileList.appendChild(li);
+            receivedFiles.classList.remove('hidden');
+            autoDownload(url, fileInfo.name);
+            receivedFileCount++;
+            if (expectedFileCount > 0 && receivedFileCount >= expectedFileCount) {
                 transferComplete = true;
-                updateReceiveStatus('complete', '传输完成！');
+                updateReceiveStatus('complete', 'receive_complete');
                 receiveProgressBar.style.width = '100%';
                 receiveProgressBar.classList.add('complete');
                 receiveSpeed.textContent = '';
                 receiveFileInfo.className = 'alert alert-success';
-                receiveFileInfo.textContent = '✅ 所有文件传输完成！';
-                receivedFiles.classList.remove('hidden');
-                showAlert('文件传输完成！', 'success');
+                receiveFileInfo.textContent = t('all_received');
+                showAlert(t('all_received'), 'success');
             }
+        }
 
-            function assembleAndDownloadFile(fileIndex) {
-                const fileInfo = receivedFileChunks[fileIndex];
-                if (!fileInfo || fileInfo._assembled) return;
-                fileInfo._assembled = true;
-                const totalLength = fileInfo.chunks.reduce((sum, chunk) => sum + (chunk ? chunk.byteLength : 0), 0);
-                const assembled = new Uint8Array(totalLength);
-                let offset = 0;
-                for (let i = 0; i < fileInfo.totalChunks; i++) {
-                    if (fileInfo.chunks[i]) { assembled.set(fileInfo.chunks[i], offset); offset += fileInfo.chunks[i].byteLength; }
-                }
-                const blob = new Blob([assembled], { type: fileInfo.mime });
-                const url = URL.createObjectURL(blob);
-                const li = document.createElement('li');
-                li.innerHTML = `<span class="file-icon">📄</span><div class="file-info"><div class="file-name">${escapeHtml(fileInfo.name)}</div><div class="file-size">${formatSize(fileInfo.size || totalLength)}</div></div><button class="btn btn-success btn-sm" onclick="downloadFile('${url.replace(/'/g, "\\'")}', '${escapeHtml(fileInfo.name).replace(/'/g, "\\'")}')">⬇ 下载</button>`;
-                receivedFileList.appendChild(li);
-                receivedFiles.classList.remove('hidden');
-                autoDownload(url, fileInfo.name);
-                receivedFileCount++;
-                if (expectedFileCount > 0 && receivedFileCount >= expectedFileCount) {
-                    transferComplete = true;
-                    updateReceiveStatus('complete', '全部接收完成！');
-                    receiveProgressBar.style.width = '100%';
-                    receiveProgressBar.classList.add('complete');
-                    receiveSpeed.textContent = '';
-                    receiveFileInfo.className = 'alert alert-success';
-                    receiveFileInfo.textContent = '✅ 所有文件传输完成！';
-                    showAlert('全部文件接收完成！', 'success');
-                }
-            }
+        function autoDownload(url, filename) {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => document.body.removeChild(a), 100);
+        }
 
-            function autoDownload(url, filename) {
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = filename;
-                a.style.display = 'none';
-                document.body.appendChild(a);
-                a.click();
-                setTimeout(() => document.body.removeChild(a), 100);
-            }
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
 
-            function escapeHtml(str) {
-                const div = document.createElement('div');
-                div.textContent = str;
-                return div.innerHTML;
-            }
+        window.downloadFile = function(url, filename) {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => document.body.removeChild(a), 100);
+        };
 
-            window.downloadFile = function(url, filename) {
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = filename;
-                a.style.display = 'none';
-                document.body.appendChild(a);
-                a.click();
-                setTimeout(() => document.body.removeChild(a), 100);
-            };
+        function startSendingFiles() {
+            if (!conn || selectedFiles.length === 0 || transferComplete) return;
+            totalBytesSent = 0;
+            totalBytesToSend = selectedFiles.reduce((sum, f) => sum + f.size, 0);
+            lastSpeedUpdate = Date.now();
+            bytesSinceLastUpdate = 0;
+            updateSendStatus('transferring', 'sending_files');
+            sendProgress.classList.remove('hidden');
+            sendProgressBar.style.width = '0%';
+            sendProgressBar.classList.remove('complete');
+            sendSpeed.textContent = '';
+            const filesMeta = selectedFiles.map((f) => ({
+                name: f.name,
+                size: f.size,
+                type: f.type || 'application/octet-stream',
+                totalChunks: Math.ceil(f.size / CHUNK_SIZE),
+            }));
+            sendBinaryMessage(0, JSON.stringify({ type: 'meta', files: filesMeta, totalSize: totalBytesToSend, fileCount: selectedFiles.length }));
+            setTimeout(() => sendAllFiles(0), 200);
+        }
 
-            // ============ 发送文件 ============
-            function startSendingFiles() {
-                if (!conn || selectedFiles.length === 0 || transferComplete) return;
-                totalBytesSent = 0;
-                totalBytesToSend = selectedFiles.reduce((sum, f) => sum + f.size, 0);
-                transferStartTime = Date.now();
-                lastSpeedUpdate = Date.now();
-                bytesSinceLastUpdate = 0;
-                updateSendStatus('transferring', '正在发送文件...');
-                sendProgress.classList.remove('hidden');
-                sendProgressBar.style.width = '0%';
-                sendProgressBar.classList.remove('complete');
+        function sendAllFiles(fileIndex) {
+            if (fileIndex >= selectedFiles.length) {
+                sendBinaryMessage(2, JSON.stringify({ type: 'complete', fileCount: selectedFiles.length }));
+                transferComplete = true;
+                updateSendStatus('complete', 'send_complete');
+                sendProgressBar.style.width = '100%';
+                sendProgressBar.classList.add('complete');
                 sendSpeed.textContent = '';
-                const filesMeta = selectedFiles.map((f) => ({
-                    name: f.name,
-                    size: f.size,
-                    type: f.type || 'application/octet-stream',
-                    totalChunks: Math.ceil(f.size / CHUNK_SIZE),
-                }));
-                sendBinaryMessage(0, JSON.stringify({ type: 'meta', files: filesMeta, totalSize: totalBytesToSend, fileCount: selectedFiles.length }));
-                setTimeout(() => sendAllFiles(0), 200);
+                showAlert(t('all_sent'), 'success');
+                return;
             }
+            sendSingleFile(fileIndex, () => sendAllFiles(fileIndex + 1));
+        }
 
-            function sendAllFiles(fileIndex) {
-                if (fileIndex >= selectedFiles.length) {
-                    sendBinaryMessage(2, JSON.stringify({ type: 'complete', fileCount: selectedFiles.length }));
-                    transferComplete = true;
-                    updateSendStatus('complete', '发送完成！');
-                    sendProgressBar.style.width = '100%';
-                    sendProgressBar.classList.add('complete');
-                    sendSpeed.textContent = '';
-                    showAlert('所有文件发送完成！', 'success');
-                    return;
+        function sendSingleFile(fileIndex, onComplete) {
+            const file = selectedFiles[fileIndex];
+            const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+            let currentChunk = 0;
+            const reader = new FileReader();
+            function readNextChunk() {
+                if (currentChunk >= totalChunks) { onComplete(); return; }
+                const start = currentChunk * CHUNK_SIZE;
+                const end = Math.min(start + CHUNK_SIZE, file.size);
+                reader.readAsArrayBuffer(file.slice(start, end));
+            }
+            reader.onload = function(e) {
+                const chunkData = new Uint8Array(e.target.result);
+                sendFileChunk(fileIndex, currentChunk, totalChunks, chunkData);
+                totalBytesSent += chunkData.byteLength;
+                currentChunk++;
+                const now = Date.now();
+                const elapsed = (now - lastSpeedUpdate) / 1000;
+                bytesSinceLastUpdate += chunkData.byteLength;
+                if (elapsed >= 1.0) {
+                    sendSpeed.textContent = formatSpeed(bytesSinceLastUpdate / elapsed);
+                    bytesSinceLastUpdate = 0;
+                    lastSpeedUpdate = now;
                 }
-                sendSingleFile(fileIndex, () => sendAllFiles(fileIndex + 1));
-            }
-
-            function sendSingleFile(fileIndex, onComplete) {
-                const file = selectedFiles[fileIndex];
-                const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-                let currentChunk = 0;
-                const reader = new FileReader();
-                function readNextChunk() {
-                    if (currentChunk >= totalChunks) { onComplete(); return; }
-                    const start = currentChunk * CHUNK_SIZE;
-                    const end = Math.min(start + CHUNK_SIZE, file.size);
-                    reader.readAsArrayBuffer(file.slice(start, end));
+                updateSendProgress(Math.round((totalBytesSent / totalBytesToSend) * 100));
+                if (conn && conn._dc && conn._dc.bufferedAmount > 1024 * 1024) {
+                    conn._dc.addEventListener('bufferedamountlow', function onLow() {
+                        conn._dc.removeEventListener('bufferedamountlow', onLow);
+                        readNextChunk();
+                    });
+                } else {
+                    if (currentChunk % 20 === 0) setTimeout(readNextChunk, 5);
+                    else readNextChunk();
                 }
-                reader.onload = function(e) {
-                    const chunkData = new Uint8Array(e.target.result);
-                    sendFileChunk(fileIndex, currentChunk, totalChunks, chunkData);
-                    totalBytesSent += chunkData.byteLength;
-                    currentChunk++;
-                    const now = Date.now();
-                    const elapsed = (now - lastSpeedUpdate) / 1000;
-                    bytesSinceLastUpdate += chunkData.byteLength;
-                    if (elapsed >= 1.0) {
-                        sendSpeed.textContent = formatSpeed(bytesSinceLastUpdate / elapsed);
-                        bytesSinceLastUpdate = 0;
-                        lastSpeedUpdate = now;
-                    }
-                    updateSendProgress(Math.round((totalBytesSent / totalBytesToSend) * 100));
-                    if (conn && conn._dc && conn._dc.bufferedAmount > 1024 * 1024) {
-                        conn._dc.addEventListener('bufferedamountlow', function onLow() {
-                            conn._dc.removeEventListener('bufferedamountlow', onLow);
-                            readNextChunk();
-                        });
-                    } else {
-                        if (currentChunk % 20 === 0) setTimeout(readNextChunk, 5);
-                        else readNextChunk();
-                    }
-                };
-                reader.onerror = () => { showAlert('读取文件失败', 'error'); onComplete(); };
-                readNextChunk();
-            }
-
-            function sendBinaryMessage(msgType, jsonPayload) {
-                if (!conn) return;
-                const jsonBytes = new TextEncoder().encode(jsonPayload);
-                const buffer = new ArrayBuffer(1 + jsonBytes.byteLength);
-                new DataView(buffer).setUint8(0, msgType);
-                new Uint8Array(buffer, 1).set(jsonBytes);
-                conn.send(buffer);
-            }
-
-            function sendFileChunk(fileIndex, chunkIndex, totalChunks, chunkData) {
-                if (!conn) return;
-                const buffer = new ArrayBuffer(13 + chunkData.byteLength);
-                const view = new DataView(buffer);
-                view.setUint8(0, 1);
-                view.setUint32(1, fileIndex, false);
-                view.setUint32(5, chunkIndex, false);
-                view.setUint32(9, totalChunks, false);
-                new Uint8Array(buffer, 13).set(chunkData);
-                conn.send(buffer);
-            }
-
-            // ============ 状态更新函数 ============
-            function updateSendStatus(status, text) {
-                const map = {
-                    connecting: ['connecting', 'status-connecting'],
-                    connected: ['connected', 'status-connected'],
-                    transferring: ['transferring', 'status-transferring'],
-                    complete: ['connected', 'status-complete'],
-                    error: ['', 'status-error']
-                };
-                const [dot, badge] = map[status] || ['connecting', 'status-connecting'];
-                sendStatus.innerHTML = `<span class="status-badge ${badge}">${dot ? `<span class="status-dot ${dot}"></span>` : ''} ${text}</span>`;
-            }
-
-            function updateReceiveStatus(status, text) {
-                const map = {
-                    connecting: ['connecting', 'status-connecting'],
-                    connected: ['connected', 'status-connected'],
-                    transferring: ['transferring', 'status-transferring'],
-                    complete: ['connected', 'status-complete'],
-                    error: ['', 'status-error']
-                };
-                const [dot, badge] = map[status] || ['connecting', 'status-connecting'];
-                receiveStatus.innerHTML = `<span class="status-badge ${badge}">${dot ? `<span class="status-dot ${dot}"></span>` : ''} ${text}</span>`;
-            }
-
-            function updateSendProgress(percent) {
-                sendProgressBar.style.width = percent + '%';
-                sendProgressLabel.textContent = `发送中... ${percent}%`;
-            }
-
-            function updateReceiveProgress(percent) {
-                receiveProgressBar.style.width = percent + '%';
-                receiveProgressLabel.textContent = `接收中... ${percent}%`;
-            }
-
-            // ============ 复制和分享 ============
-            function copyRoomCode() {
-                if (!roomId) return;
-                navigator.clipboard.writeText(roomId).then(() => {
-                    btnCopyRoom.classList.add('copied');
-                    setTimeout(() => btnCopyRoom.classList.remove('copied'), 1800);
-                }).catch(() => {
-                    const input = document.createElement('input');
-                    input.value = roomId;
-                    document.body.appendChild(input);
-                    input.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(input);
-                    btnCopyRoom.classList.add('copied');
-                    setTimeout(() => btnCopyRoom.classList.remove('copied'), 1800);
-                });
-            }
-
-            function shareRoomLink() {
-                const link = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
-                navigator.clipboard.writeText(link).then(() => showAlert('链接已复制！发送给朋友即可', 'success')).catch(() => {
-                    const input = document.createElement('input');
-                    input.value = link;
-                    document.body.appendChild(input);
-                    input.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(input);
-                    showAlert('链接已复制！', 'success');
-                });
-            }
-
-            // ============ 文件选择事件 ============
-            fileInput.addEventListener('change', function() {
-                handleFileSelection(Array.from(this.files));
-            });
-
-            dropZone.addEventListener('dragover', function(e) { e.preventDefault(); this.classList.add('drag-over'); });
-            dropZone.addEventListener('dragleave', function(e) { e.preventDefault(); this.classList.remove('drag-over'); });
-            dropZone.addEventListener('drop', function(e) {
-                e.preventDefault();
-                this.classList.remove('drag-over');
-                if (e.dataTransfer.files.length > 0) handleFileSelection(Array.from(e.dataTransfer.files));
-            });
-
-            function handleFileSelection(files) {
-                if (appState !== 'room' || !conn) return;
-                selectedFiles = files;
-                renderFileList();
-                if (selectedFiles.length > 0 && !transferComplete) {
-                    startSendingFiles();
-                }
-            }
-
-            function renderFileList() {
-                fileList.innerHTML = '';
-                if (selectedFiles.length === 0) { fileList.classList.add('hidden'); return; }
-                fileList.classList.remove('hidden');
-                selectedFiles.forEach((f, i) => {
-                    const li = document.createElement('li');
-                    li.innerHTML = `<span class="file-icon">${getFileIcon(f.name)}</span><div class="file-info"><div class="file-name">${escapeHtml(f.name)}</div><div class="file-size">${formatSize(f.size)}</div></div><button class="file-remove" onclick="removeFile(${i})" title="移除">×</button>`;
-                    fileList.appendChild(li);
-                });
-            }
-
-            function getFileIcon(filename) {
-                const ext = filename.split('.').pop().toLowerCase();
-                const icons = { jpg: '🖼️', jpeg: '🖼️', png: '🖼️', gif: '🖼️', webp: '🖼️', svg: '🖼️', bmp: '🖼️', mp4: '🎬', mov: '🎬', avi: '🎬', mkv: '🎬', mp3: '🎵', wav: '🎵', flac: '🎵', aac: '🎵', pdf: '📕', doc: '📝', docx: '📝', xls: '📊', xlsx: '📊', ppt: '📽️', pptx: '📽️', zip: '📦', rar: '📦', '7z': '📦', tar: '📦', gz: '📦', txt: '📄', json: '📄', csv: '📄', html: '🌐', css: '🎨', js: '⚙️', py: '🐍', exe: '💻', apk: '📱', dmg: '💿' };
-                return icons[ext] || '📎';
-            }
-
-            window.removeFile = function(index) {
-                selectedFiles.splice(index, 1);
-                renderFileList();
-                fileInput.value = '';
             };
+            reader.onerror = () => { showAlert(t('read_error'), 'error'); onComplete(); };
+            readNextChunk();
+        }
 
-            // ============ URL参数检测 ============
-            function checkUrlParams() {
-                const params = new URLSearchParams(window.location.search);
-                const roomParam = params.get('room');
-                if (roomParam && appState === 'idle') {
-                    roomCodeInput.value = roomParam.trim().toUpperCase();
-                    joinRoom();
-                }
-            }
+        function sendBinaryMessage(msgType, jsonPayload) {
+            if (!conn) return;
+            const jsonBytes = new TextEncoder().encode(jsonPayload);
+            const buffer = new ArrayBuffer(1 + jsonBytes.byteLength);
+            new DataView(buffer).setUint8(0, msgType);
+            new Uint8Array(buffer, 1).set(jsonBytes);
+            conn.send(buffer);
+        }
 
-            // ============ 键盘事件 ============
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' && appState === 'joining' && roomCodeInput.value.trim().length >= 3) {
-                    joinRoom();
-                }
+        function sendFileChunk(fileIndex, chunkIndex, totalChunks, chunkData) {
+            if (!conn) return;
+            const buffer = new ArrayBuffer(13 + chunkData.byteLength);
+            const view = new DataView(buffer);
+            view.setUint8(0, 1);
+            view.setUint32(1, fileIndex, false);
+            view.setUint32(5, chunkIndex, false);
+            view.setUint32(9, totalChunks, false);
+            new Uint8Array(buffer, 13).set(chunkData);
+            conn.send(buffer);
+        }
+
+        function updateSendStatus(status, key, vars) {
+            currentSendStatus = { status, key, vars };
+            const map = {
+                connecting: ['connecting', 'status-connecting'],
+                connected: ['connected', 'status-connected'],
+                transferring: ['transferring', 'status-transferring'],
+                complete: ['connected', 'status-complete'],
+                error: ['', 'status-error']
+            };
+            const [dot, badge] = map[status] || ['connecting', 'status-connecting'];
+            const text = t(key, vars);
+            sendStatus.innerHTML = `<span class="status-badge ${badge}">${dot ? `<span class="status-dot ${dot}"></span>` : ''} ${text}</span>`;
+        }
+
+        function updateReceiveStatus(status, key, vars) {
+            currentReceiveStatus = { status, key, vars };
+            const map = {
+                connecting: ['connecting', 'status-connecting'],
+                connected: ['connected', 'status-connected'],
+                transferring: ['transferring', 'status-transferring'],
+                complete: ['connected', 'status-complete'],
+                error: ['', 'status-error']
+            };
+            const [dot, badge] = map[status] || ['connecting', 'status-connecting'];
+            const text = t(key, vars);
+            receiveStatus.innerHTML = `<span class="status-badge ${badge}">${dot ? `<span class="status-dot ${dot}"></span>` : ''} ${text}</span>`;
+        }
+
+        function updateSendProgress(percent) {
+            sendProgressBar.style.width = percent + '%';
+            sendProgressLabel.textContent = t('sending_progress', { percent: percent });
+        }
+
+        function updateReceiveProgress(percent) {
+            receiveProgressBar.style.width = percent + '%';
+            receiveProgressLabel.textContent = t('sending_progress', { percent: percent });
+        }
+
+        function copyRoomCode() {
+            if (!roomId) return;
+            navigator.clipboard.writeText(roomId).then(() => {
+                btnCopyRoom.classList.add('copied');
+                setTimeout(() => btnCopyRoom.classList.remove('copied'), 1800);
+            }).catch(() => {
+                const input = document.createElement('input');
+                input.value = roomId;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                document.body.removeChild(input);
+                btnCopyRoom.classList.add('copied');
+                setTimeout(() => btnCopyRoom.classList.remove('copied'), 1800);
             });
+        }
 
-            window.addEventListener('beforeunload', cleanupPeer);
+        function shareRoomLink() {
+            const link = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
+            navigator.clipboard.writeText(link).then(() => showAlert(t('copy_success'), 'success')).catch(() => {
+                const input = document.createElement('input');
+                input.value = link;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                document.body.removeChild(input);
+                showAlert(t('link_copied'), 'success');
+            });
+        }
 
-            // ============ 初始化 ============
-            showScreen(screenIdle);
-            checkUrlParams();
-            window.createRoom = createRoom;
-            window.showJoinScreen = showJoinScreen;
-            window.joinRoom = joinRoom;
-            window.goBackToIdle = goBackToIdle;
-            window.copyRoomCode = copyRoomCode;
-            window.shareRoomLink = shareRoomLink;
-            window.resetAll = resetAll;
-        })();
+        // ============ 事件绑定 ============
+        document.getElementById('btnCreate').addEventListener('click', createRoom);
+        document.getElementById('btnJoin').addEventListener('click', showJoinScreen);
+        document.getElementById('btnBack').addEventListener('click', goBackToIdle);
+        document.getElementById('btnJoinConfirm').addEventListener('click', joinRoom);
+        document.getElementById('btnRestart').addEventListener('click', resetAll);
+        document.getElementById('btnCopyRoom').addEventListener('click', copyRoomCode);
+        document.getElementById('btnShareLink').addEventListener('click', shareRoomLink);
+
+        fileInput.addEventListener('change', function() {
+            handleFileSelection(Array.from(this.files));
+        });
+        dropZone.addEventListener('dragover', function(e) { e.preventDefault(); this.classList.add('drag-over'); });
+        dropZone.addEventListener('dragleave', function(e) { e.preventDefault(); this.classList.remove('drag-over'); });
+        dropZone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over');
+            if (e.dataTransfer.files.length > 0) handleFileSelection(Array.from(e.dataTransfer.files));
+        });
+
+        function handleFileSelection(files) {
+            if (appState !== 'room' || !conn) return;
+            selectedFiles = files;
+            renderFileList();
+            if (selectedFiles.length > 0 && !transferComplete) {
+                startSendingFiles();
+            }
+        }
+
+        function renderFileList() {
+            fileList.innerHTML = '';
+            if (selectedFiles.length === 0) { fileList.classList.add('hidden'); return; }
+            fileList.classList.remove('hidden');
+            selectedFiles.forEach((f, i) => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span class="file-icon">${getFileIcon(f.name)}</span><div class="file-info"><div class="file-name">${escapeHtml(f.name)}</div><div class="file-size">${formatSize(f.size)}</div></div><button class="file-remove" data-index="${i}" title="${t('remove_file')}">×</button>`;
+                fileList.appendChild(li);
+            });
+            fileList.querySelectorAll('.file-remove').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    selectedFiles.splice(index, 1);
+                    renderFileList();
+                    fileInput.value = '';
+                });
+            });
+        }
+
+        function getFileIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const icons = { jpg: '🖼️', jpeg: '🖼️', png: '🖼️', gif: '🖼️', webp: '🖼️', svg: '🖼️', bmp: '🖼️', mp4: '🎬', mov: '🎬', avi: '🎬', mkv: '🎬', mp3: '🎵', wav: '🎵', flac: '🎵', aac: '🎵', pdf: '📕', doc: '📝', docx: '📝', xls: '📊', xlsx: '📊', ppt: '📽️', pptx: '📽️', zip: '📦', rar: '📦', '7z': '📦', tar: '📦', gz: '📦', txt: '📄', json: '📄', csv: '📄', html: '🌐', css: '🎨', js: '⚙️', py: '🐍', exe: '💻', apk: '📱', dmg: '💿' };
+            return icons[ext] || '📎';
+        }
+
+        function checkUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            const roomParam = params.get('room');
+            if (roomParam && appState === 'idle') {
+                roomCodeInput.value = roomParam.trim().toUpperCase();
+                joinRoom();
+            }
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && appState === 'joining' && roomCodeInput.value.trim().length >= 3) {
+                joinRoom();
+            }
+        });
+
+        window.addEventListener('beforeunload', cleanupPeer);
+
+        // ============ 初始化 ============
+        applyLanguage();
+        showScreen(screenIdle);
+        checkUrlParams();
     </script>
 </body>
 </html>
