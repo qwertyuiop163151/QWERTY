@@ -130,6 +130,14 @@
             width: 36px; height: 36px; pointer-events: auto;
         }
         .theme-toggle:hover { background: var(--border); }
+        .fullscreen-toggle {
+            background: none; border: none; font-size: 1.3rem; cursor: pointer;
+            padding: 6px; border-radius: 50%; line-height: 1;
+            transition: background-color 0.25s ease; color: inherit;
+            display: flex; align-items: center; justify-content: center;
+            width: 36px; height: 36px; pointer-events: auto;
+        }
+        .fullscreen-toggle:hover { background: var(--border); }
         .lang-select {
             background: var(--lang-select-bg); color: var(--lang-select-text);
             border: 1.5px solid var(--lang-select-border); border-radius: 8px;
@@ -287,6 +295,7 @@
             .drop-zone { padding: 24px 14px; }
             .controls { gap: 4px; }
             .lang-select { max-width: 120px; font-size: 0.8rem; }
+            .fullscreen-toggle { font-size: 1.1rem; }
         }
         html[data-theme="dark"] .alert-info { background: #1b2a3a; color: #60a5fa; border-color: #1e3a5f; }
         html[data-theme="dark"] .alert-warning { background: #3a2f1b; color: #fbbf24; border-color: #5f3f1e; }
@@ -515,7 +524,10 @@
         <div class="card">
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <h1>📁 P2P 文件互传</h1>
-                <button class="theme-toggle ancient-theme-toggle" title="切换深色/浅色模式">🌙</button>
+                <div style="display:flex; gap:8px;">
+                    <button class="fullscreen-toggle" title="全屏模式">⛶</button>
+                    <button class="theme-toggle ancient-theme-toggle" title="切换深色/浅色模式">🌙</button>
+                </div>
             </div>
             <p>您的浏览器版本过旧，无法使用此工具。</p>
             <p>请使用现代浏览器（如 Chrome、Firefox、Edge、Safari）访问。</p>
@@ -540,6 +552,7 @@
                         <option value="ja">日本語</option>
                         <option value="ko">한국어</option>
                     </select>
+                    <button class="fullscreen-toggle" title="全屏模式">⛶</button>
                     <button class="theme-toggle legacy-theme-toggle" title="切换深色/浅色模式">🌙</button>
                 </div>
             </div>
@@ -599,6 +612,7 @@
                     <option value="hi">हिन्दी</option>
                     <option value="mn">Монгол</option>
                 </select>
+                <button class="fullscreen-toggle" title="全屏模式">⛶</button>
                 <button class="theme-toggle modern-theme-toggle" title="切换深色/浅色模式">🌙</button>
             </div>
             <h1 data-i18n="app_title">P2P 多人文件互传</h1>
@@ -702,7 +716,32 @@
             if (e.target.classList.contains('theme-toggle')) {
                 toggleTheme();
             }
+            if (e.target.classList.contains('fullscreen-toggle')) {
+                toggleFullscreen();
+            }
         });
+
+        // ========== 全屏切换 ==========
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                const el = document.documentElement;
+                if (el.requestFullscreen) {
+                    el.requestFullscreen().catch(err => {});
+                } else if (el.webkitRequestFullscreen) {
+                    el.webkitRequestFullscreen();
+                } else if (el.msRequestFullscreen) {
+                    el.msRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+            }
+        }
 
         // ========== 版本切换控制 ==========
         let currentVersion = 'modern';
