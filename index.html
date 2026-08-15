@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>P2P 多人文件互传</title>
+    <title>P2P 文件互传 - 多版本兼容</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
+        /* ========== 全局基础样式（现代模式） ========== */
         :root {
             --bg: #f0f2f5;
             --card-bg: #ffffff;
@@ -17,9 +18,8 @@
             --success: #10b981;
             --warning: #f59e0b;
             --danger: #ef4444;
-            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-            --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
-            --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.06);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.08);
             --radius: 16px;
             --radius-sm: 10px;
             --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -56,7 +56,6 @@
             --danger: #f87171;
             --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
             --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.4);
-            --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.5);
             --drop-zone-bg: #111827;
             --input-bg: #111827;
             --btn-secondary-bg: #374151;
@@ -77,11 +76,7 @@
             --status-error-text: #f87171;
             --drop-zone-hover-bg: #26334a;
         }
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
             background-color: var(--bg);
@@ -95,10 +90,7 @@
             -webkit-font-smoothing: antialiased;
             transition: background-color 0.25s ease, color 0.25s ease;
         }
-        .container {
-            width: 100%;
-            max-width: 600px;
-        }
+        .container { width: 100%; max-width: 600px; }
         .card {
             background: var(--card-bg);
             border-radius: var(--radius);
@@ -112,1587 +104,1755 @@
         .card::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
+            top: 0; left: 0; right: 0; height: 3px;
             background: linear-gradient(90deg, #4f6ef7, #7c8cf8, #a78bfa, #4f6ef7);
             background-size: 200% 100%;
             animation: shimmer 3s ease-in-out infinite;
         }
-        @keyframes shimmer {
-            0%,
-            100% {
-                background-position: 0% 50%;
-            }
-            50% {
-                background-position: 100% 50%;
-            }
-        }
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 8px;
-            flex-wrap: wrap;
-        }
+        @keyframes shimmer { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+        .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
         .logo-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
+            width: 44px; height: 44px; border-radius: 12px;
             background: linear-gradient(135deg, #4f6ef7, #7c8cf8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            color: #fff;
-            flex-shrink: 0;
-            box-shadow: 0 4px 12px rgba(79, 110, 247, 0.3);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; color: #fff; flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(79,110,247,0.3);
         }
-        .logo-text {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--text);
-            letter-spacing: -0.3px;
-            transition: color 0.25s ease;
-        }
-        .controls {
-            margin-left: auto;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .logo-text { font-size: 1.3rem; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
+        .controls { margin-left: auto; display: flex; align-items: center; gap: 8px; }
         .theme-toggle {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 6px;
-            border-radius: 50%;
-            line-height: 1;
-            transition: background-color 0.25s ease;
-            color: inherit;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 36px;
-            height: 36px;
-            pointer-events: auto;
+            background: none; border: none; font-size: 1.5rem; cursor: pointer;
+            padding: 6px; border-radius: 50%; line-height: 1;
+            transition: background-color 0.25s ease; color: inherit;
+            display: flex; align-items: center; justify-content: center;
+            width: 36px; height: 36px; pointer-events: auto;
         }
-        .theme-toggle:hover {
-            background: var(--border);
-        }
+        .theme-toggle:hover { background: var(--border); }
         .lang-select {
-            background: var(--lang-select-bg);
-            color: var(--lang-select-text);
-            border: 1.5px solid var(--lang-select-border);
-            border-radius: 8px;
-            padding: 6px 8px;
-            font-size: 0.9rem;
-            cursor: pointer;
-            outline: none;
-            font-weight: 500;
-            appearance: auto;
-            transition: all var(--transition);
-            max-width: 150px;
-            pointer-events: auto;
+            background: var(--lang-select-bg); color: var(--lang-select-text);
+            border: 1.5px solid var(--lang-select-border); border-radius: 8px;
+            padding: 6px 8px; font-size: 0.9rem; cursor: pointer; outline: none;
+            font-weight: 500; appearance: auto; transition: all var(--transition);
+            max-width: 150px; pointer-events: auto;
         }
-        .lang-select:hover {
-            border-color: var(--primary);
-        }
-        .subtitle {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            margin-bottom: 24px;
-            line-height: 1.5;
-            transition: color 0.25s ease;
-        }
+        .lang-select:hover { border-color: var(--primary); }
+        .subtitle { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 24px; line-height: 1.5; }
         .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 13px 24px;
-            border-radius: 50px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            transition: all var(--transition);
-            letter-spacing: 0.2px;
-            white-space: nowrap;
-            user-select: none;
-            -webkit-user-select: none;
-            outline: none;
-            position: relative;
-            overflow: hidden;
-            pointer-events: auto;
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 13px 24px; border-radius: 50px; font-size: 1rem; font-weight: 600;
+            cursor: pointer; border: none; transition: all var(--transition);
+            letter-spacing: 0.2px; white-space: nowrap; user-select: none;
+            -webkit-user-select: none; outline: none; position: relative;
+            overflow: hidden; pointer-events: auto;
         }
-        .btn:active {
-            transform: scale(0.96);
-        }
-        .btn-primary {
-            background: var(--primary);
-            color: #fff;
-            box-shadow: 0 4px 14px rgba(79, 110, 247, 0.35);
-        }
-        .btn-primary:hover {
-            background: var(--primary-hover);
-            box-shadow: 0 6px 20px rgba(79, 110, 247, 0.45);
-            transform: translateY(-1px);
-        }
-        .btn-secondary {
-            background: var(--btn-secondary-bg);
-            color: var(--text);
-            border: 1.5px solid var(--border);
-        }
-        .btn-secondary:hover {
-            background: var(--btn-secondary-hover-bg);
-            border-color: #c8cde0;
-        }
-        .btn-success {
-            background: var(--success);
-            color: #fff;
-            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
-        }
-        .btn-success:hover {
-            background: #059669;
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
-        }
-        .btn-sm {
-            padding: 8px 16px;
-            font-size: 0.85rem;
-            border-radius: 30px;
-        }
-        .btn-block {
-            width: 100%;
-        }
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            pointer-events: none;
-        }
-        .btn-row {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-        .btn-row .btn {
-            flex: 1;
-            min-width: 120px;
-        }
+        .btn:active { transform: scale(0.96); }
+        .btn-primary { background: var(--primary); color: #fff; box-shadow: 0 4px 14px rgba(79,110,247,0.35); }
+        .btn-primary:hover { background: var(--primary-hover); box-shadow: 0 6px 20px rgba(79,110,247,0.45); transform: translateY(-1px); }
+        .btn-secondary { background: var(--btn-secondary-bg); color: var(--text); border: 1.5px solid var(--border); }
+        .btn-secondary:hover { background: var(--btn-secondary-hover-bg); border-color: #c8cde0; }
+        .btn-danger { background: var(--danger); color: #fff; box-shadow: 0 4px 14px rgba(239,68,68,0.3); }
+        .btn-danger:hover { background: #dc2626; box-shadow: 0 6px 20px rgba(239,68,68,0.4); }
+        .btn-sm { padding: 8px 16px; font-size: 0.85rem; border-radius: 30px; }
+        .btn-block { width: 100%; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+        .btn-row { display: flex; gap: 12px; flex-wrap: wrap; }
+        .btn-row .btn { flex: 1; min-width: 120px; }
         .divider {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            margin: 20px 0;
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-            font-weight: 500;
-            transition: color 0.25s ease;
+            display: flex; align-items: center; gap: 14px; margin: 20px 0;
+            color: var(--text-secondary); font-size: 0.85rem; font-weight: 500;
         }
-        .divider::before,
-        .divider::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: var(--border);
-            transition: background-color 0.25s ease;
+        .divider::before, .divider::after {
+            content: ''; flex: 1; height: 1px; background: var(--border);
         }
-        .input-group {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
+        .input-group { display: flex; gap: 10px; align-items: center; }
         .input-group input {
-            flex: 1;
-            padding: 12px 16px;
-            border-radius: 50px;
-            border: 1.5px solid var(--border);
-            font-size: 1rem;
-            outline: none;
-            transition: all var(--transition);
-            background: var(--input-bg);
-            letter-spacing: 1px;
-            font-weight: 600;
-            text-align: center;
-            text-transform: uppercase;
-            color: var(--text);
-            pointer-events: auto;
+            flex: 1; padding: 12px 16px; border-radius: 50px; border: 1.5px solid var(--border);
+            font-size: 1rem; outline: none; transition: all var(--transition);
+            background: var(--input-bg); letter-spacing: 1px; font-weight: 600;
+            text-align: center; text-transform: uppercase; color: var(--text); pointer-events: auto;
         }
         .input-group input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(79, 110, 247, 0.1);
+            border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,110,247,0.1);
             background: var(--card-bg);
         }
-        .input-group input::placeholder {
-            letter-spacing: 0;
-            font-weight: 400;
-            text-transform: none;
-            color: #b0b8c8;
-        }
+        .input-group input::placeholder { letter-spacing: 0; font-weight: 400; text-transform: none; color: #b0b8c8; }
         .room-display {
-            background: var(--room-display-bg);
-            border-radius: var(--radius-sm);
-            padding: 20px;
-            text-align: center;
-            border: 1.5px dashed var(--border);
-            margin: 16px 0;
-            transition: background-color 0.25s ease, border-color 0.25s ease;
+            background: var(--room-display-bg); border-radius: var(--radius-sm); padding: 20px;
+            text-align: center; border: 1.5px dashed var(--border); margin: 16px 0;
         }
         .room-code {
-            font-size: 2.2rem;
-            font-weight: 800;
-            letter-spacing: 4px;
-            color: var(--primary);
+            font-size: 2.2rem; font-weight: 800; letter-spacing: 4px; color: var(--primary);
             font-family: 'SF Mono', 'Fira Code', 'Consolas', 'Monaco', monospace;
-            user-select: all;
-            -webkit-user-select: all;
-            word-break: break-all;
-            transition: color 0.25s ease;
+            user-select: all; -webkit-user-select: all; word-break: break-all;
         }
         .room-label {
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: var(--text-secondary);
-            margin-bottom: 6px;
-            font-weight: 600;
-            transition: color 0.25s ease;
+            font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1.5px;
+            color: var(--text-secondary); margin-bottom: 6px; font-weight: 600;
         }
         .drop-zone {
-            border: 2px dashed var(--border);
-            border-radius: var(--radius-sm);
-            padding: 36px 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all var(--transition);
-            background: var(--drop-zone-bg);
-            margin: 16px 0;
-            position: relative;
-            pointer-events: auto;
+            border: 2px dashed var(--border); border-radius: var(--radius-sm); padding: 36px 20px;
+            text-align: center; cursor: pointer; transition: all var(--transition);
+            background: var(--drop-zone-bg); margin: 16px 0; position: relative; pointer-events: auto;
         }
-        .drop-zone:hover,
-        .drop-zone.drag-over {
-            border-color: var(--primary);
-            background: var(--drop-zone-hover-bg);
-            box-shadow: 0 0 0 4px rgba(79, 110, 247, 0.06);
+        .drop-zone:hover, .drop-zone.drag-over {
+            border-color: var(--primary); background: var(--drop-zone-hover-bg);
+            box-shadow: 0 0 0 4px rgba(79,110,247,0.06);
         }
-        .drop-zone-icon {
-            font-size: 42px;
-            margin-bottom: 8px;
-            display: block;
-        }
-        .drop-zone-text {
-            font-weight: 600;
-            color: var(--text);
-            font-size: 0.95rem;
-            transition: color 0.25s ease;
-        }
-        .drop-zone-hint {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            margin-top: 4px;
-            transition: color 0.25s ease;
-        }
-        .drop-zone input[type="file"] {
-            position: absolute;
-            inset: 0;
-            opacity: 0;
-            cursor: pointer;
-            pointer-events: auto;
-        }
-        .file-list {
-            list-style: none;
-            margin: 12px 0;
-        }
+        .drop-zone-icon { font-size: 42px; margin-bottom: 8px; display: block; }
+        .drop-zone-text { font-weight: 600; color: var(--text); font-size: 0.95rem; }
+        .drop-zone-hint { font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px; }
+        .drop-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; pointer-events: auto; }
+        .file-list { list-style: none; margin: 12px 0; }
         .file-list li {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 14px;
-            background: var(--input-bg);
-            border-radius: 8px;
-            margin-bottom: 6px;
-            font-size: 0.9rem;
-            border: 1px solid var(--border);
-            transition: background-color 0.25s ease, border-color 0.25s ease;
+            display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+            background: var(--input-bg); border-radius: 8px; margin-bottom: 6px;
+            font-size: 0.9rem; border: 1px solid var(--border);
         }
-        .file-list .file-icon {
-            font-size: 1.4rem;
-            flex-shrink: 0;
-        }
-        .file-list .file-info {
-            flex: 1;
-            min-width: 0;
-        }
+        .file-list .file-icon { font-size: 1.4rem; flex-shrink: 0; }
+        .file-list .file-info { flex: 1; min-width: 0; }
         .file-list .file-name {
-            font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            color: var(--text);
+            font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text);
         }
-        .file-list .file-size {
-            font-size: 0.78rem;
-            color: var(--text-secondary);
-        }
+        .file-list .file-size { font-size: 0.78rem; color: var(--text-secondary); }
         .file-list .file-remove {
-            cursor: pointer;
-            color: #999;
-            font-size: 1.2rem;
-            padding: 4px 8px;
-            border-radius: 50%;
-            transition: all var(--transition);
-            background: none;
-            border: none;
-            line-height: 1;
-            pointer-events: auto;
+            cursor: pointer; color: #999; font-size: 1.2rem; padding: 4px 8px;
+            border-radius: 50%; transition: all var(--transition); background: none;
+            border: none; line-height: 1; pointer-events: auto;
         }
-        .file-list .file-remove:hover {
-            color: var(--danger);
-            background: #fef2f2;
-        }
-        .progress-wrapper {
-            margin: 16px 0;
-        }
+        .file-list .file-remove:hover { color: var(--danger); background: #fef2f2; }
+        .progress-wrapper { margin: 16px 0; }
         .progress-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 6px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: var(--text);
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 6px; font-size: 0.85rem; font-weight: 500; color: var(--text);
         }
-        .progress-bar-outer {
-            height: 10px;
-            background: #eef0f6;
-            border-radius: 10px;
-            overflow: hidden;
-            transition: background-color 0.25s ease;
-        }
+        .progress-bar-outer { height: 10px; background: #eef0f6; border-radius: 10px; overflow: hidden; }
         .progress-bar-inner {
-            height: 100%;
-            background: linear-gradient(90deg, #4f6ef7, #7c8cf8);
-            border-radius: 10px;
-            transition: width 0.3s ease;
-            width: 0%;
+            height: 100%; background: linear-gradient(90deg, #4f6ef7, #7c8cf8);
+            border-radius: 10px; transition: width 0.3s ease; width: 0%;
         }
-        .progress-bar-inner.complete {
-            background: linear-gradient(90deg, #10b981, #34d399);
-        }
-        .speed-text {
-            font-size: 0.78rem;
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
+        .progress-bar-inner.complete { background: linear-gradient(90deg, #10b981, #34d399); }
+        .speed-text { font-size: 0.78rem; color: var(--text-secondary); font-weight: 500; }
         .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 14px;
-            border-radius: 50px;
-            font-size: 0.82rem;
-            font-weight: 600;
-            letter-spacing: 0.3px;
-            transition: background-color 0.25s ease, color 0.25s ease;
+            display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px;
+            border-radius: 50px; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.3px;
         }
-        .status-connecting {
-            background: var(--status-connecting-bg);
-            color: var(--status-connecting-text);
-        }
-        .status-connected {
-            background: var(--status-connected-bg);
-            color: var(--status-connected-text);
-        }
-        .status-transferring {
-            background: var(--status-transferring-bg);
-            color: var(--status-transferring-text);
-        }
-        .status-complete {
-            background: var(--status-complete-bg);
-            color: var(--status-complete-text);
-        }
-        .status-error {
-            background: var(--status-error-bg);
-            color: var(--status-error-text);
-        }
+        .status-connecting { background: var(--status-connecting-bg); color: var(--status-connecting-text); }
+        .status-connected { background: var(--status-connected-bg); color: var(--status-connected-text); }
+        .status-transferring { background: var(--status-transferring-bg); color: var(--status-transferring-text); }
+        .status-complete { background: var(--status-complete-bg); color: var(--status-complete-text); }
+        .status-error { background: var(--status-error-bg); color: var(--status-error-text); }
         .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
+            width: 8px; height: 8px; border-radius: 50%; display: inline-block;
             animation: pulse-dot 1.5s ease-in-out infinite;
         }
-        .status-dot.connecting {
-            background: #f59e0b;
-        }
-        .status-dot.connected {
-            background: #10b981;
-            animation: none;
-        }
-        .status-dot.transferring {
-            background: #3b82f6;
-        }
-        @keyframes pulse-dot {
-            0%,
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
-            50% {
-                opacity: 0.4;
-                transform: scale(0.7);
-            }
-        }
+        .status-dot.connecting { background: #f59e0b; }
+        .status-dot.connected { background: #10b981; animation: none; }
+        .status-dot.transferring { background: #3b82f6; }
+        @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.7); } }
         .alert {
-            padding: 12px 16px;
-            border-radius: 10px;
-            font-size: 0.85rem;
-            margin: 12px 0;
-            font-weight: 500;
-            line-height: 1.5;
-            transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+            padding: 12px 16px; border-radius: 10px; font-size: 0.85rem; margin: 12px 0;
+            font-weight: 500; line-height: 1.5;
         }
-        .alert-info {
-            background: #eff6ff;
-            color: #1e40af;
-            border: 1px solid #bfdbfe;
-        }
-        .alert-warning {
-            background: #fffbeb;
-            color: #92400e;
-            border: 1px solid #fde68a;
-        }
-        .alert-error {
-            background: #fef2f2;
-            color: #991b1b;
-            border: 1px solid #fecaca;
-        }
-        .alert-success {
-            background: #ecfdf5;
-            color: #065f46;
-            border: 1px solid #a7f3d0;
-        }
-        .hidden {
-            display: none !important;
-        }
-        .fade-in {
-            animation: fadeIn 0.35s ease-out;
-        }
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        .text-center {
-            text-align: center;
-        }
-        .mt-2 {
-            margin-top: 8px;
-        }
-        .mt-3 {
-            margin-top: 16px;
-        }
-        .mb-2 {
-            margin-bottom: 8px;
-        }
-        .mb-3 {
-            margin-bottom: 16px;
-        }
-        .gap-2 {
-            gap: 8px;
-        }
-        .copy-tooltip {
-            position: relative;
-        }
+        .alert-info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+        .alert-warning { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+        .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+        .alert-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+        .hidden { display: none !important; }
+        .fade-in { animation: fadeIn 0.35s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .text-center { text-align: center; }
+        .mt-2 { margin-top: 8px; } .mt-3 { margin-top: 16px; } .mb-2 { margin-bottom: 8px; } .mb-3 { margin-bottom: 16px; }
+        .copy-tooltip { position: relative; }
         .copy-tooltip::after {
-            content: '已复制!';
-            position: absolute;
-            top: -36px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1a1a2e;
-            color: #fff;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 0.78rem;
-            white-space: nowrap;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.2s;
+            content: '已复制!'; position: absolute; top: -36px; left: 50%;
+            transform: translateX(-50%); background: #1a1a2e; color: #fff;
+            padding: 6px 14px; border-radius: 20px; font-size: 0.78rem;
+            white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity 0.2s;
         }
-        .copy-tooltip.copied::after {
-            opacity: 1;
-        }
-        html[dir="rtl"] .controls {
-            margin-left: 0;
-            margin-right: auto;
-        }
-        html[dir="rtl"] .logo {
-            flex-direction: row-reverse;
-        }
-        html[dir="rtl"] .btn-row,
-        html[dir="rtl"] .input-group {
-            flex-direction: row-reverse;
-        }
-        html[dir="rtl"] .file-list li {
-            flex-direction: row-reverse;
-        }
-        html[dir="rtl"] .file-list .file-info {
-            text-align: right;
-        }
+        .copy-tooltip.copied::after { opacity: 1; }
+        html[dir="rtl"] .controls { margin-left: 0; margin-right: auto; }
+        html[dir="rtl"] .logo { flex-direction: row-reverse; }
+        html[dir="rtl"] .btn-row, html[dir="rtl"] .input-group { flex-direction: row-reverse; }
+        html[dir="rtl"] .file-list li { flex-direction: row-reverse; }
+        html[dir="rtl"] .file-list .file-info { text-align: right; }
         @media (max-width: 480px) {
-            .card {
-                padding: 24px 16px;
-                border-radius: 14px;
-            }
-            .room-code {
-                font-size: 1.6rem;
-                letter-spacing: 3px;
-            }
-            .btn {
-                padding: 12px 18px;
-                font-size: 0.9rem;
-            }
-            .btn-row {
-                flex-direction: column;
-            }
-            .btn-row .btn {
-                min-width: auto;
-            }
-            .input-group {
-                flex-direction: column;
-                gap: 8px;
-            }
-            .drop-zone {
-                padding: 24px 14px;
-            }
-            .controls {
-                gap: 4px;
-            }
-            .lang-select {
-                max-width: 120px;
-                font-size: 0.8rem;
-            }
+            .card { padding: 24px 16px; border-radius: 14px; }
+            .room-code { font-size: 1.6rem; letter-spacing: 3px; }
+            .btn { padding: 12px 18px; font-size: 0.9rem; }
+            .btn-row { flex-direction: column; }
+            .btn-row .btn { min-width: auto; }
+            .input-group { flex-direction: column; gap: 8px; }
+            .drop-zone { padding: 24px 14px; }
+            .controls { gap: 4px; }
+            .lang-select { max-width: 120px; font-size: 0.8rem; }
         }
-        html[data-theme="dark"] .alert-info {
-            background: #1b2a3a;
-            color: #60a5fa;
-            border-color: #1e3a5f;
+        html[data-theme="dark"] .alert-info { background: #1b2a3a; color: #60a5fa; border-color: #1e3a5f; }
+        html[data-theme="dark"] .alert-warning { background: #3a2f1b; color: #fbbf24; border-color: #5f3f1e; }
+        html[data-theme="dark"] .alert-error { background: #3a1b1b; color: #f87171; border-color: #5f1e1e; }
+        html[data-theme="dark"] .alert-success { background: #1b3a2f; color: #34d399; border-color: #1e5f3f; }
+        html[data-theme="dark"] .progress-bar-outer { background: #374151; }
+
+        /* ========== 降级模式风格（2000年代） ========== */
+        #legacyMode .card {
+            border-radius: 0; box-shadow: none; border: 2px outset #ccc;
+            background: #f0f0f0; padding: 20px; font-family: 'Times New Roman', serif;
+            color: #000; max-width: 600px; margin: 20px auto; text-align: center;
         }
-        html[data-theme="dark"] .alert-warning {
-            background: #3a2f1b;
-            color: #fbbf24;
-            border-color: #5f3f1e;
+        #legacyMode .btn {
+            border-radius: 0; border: 2px outset #ccc; background: #d4d0c8;
+            color: #000; padding: 5px 15px; font-weight: normal; box-shadow: none;
+            margin: 3px; display: inline-block; cursor: pointer;
+            font-family: 'Times New Roman', serif; transition: none;
         }
-        html[data-theme="dark"] .alert-error {
-            background: #3a1b1b;
-            color: #f87171;
-            border-color: #5f1e1e;
+        #legacyMode .btn:hover { background: #e0e0e0; border-style: inset; transform: none; box-shadow: none; }
+        #legacyMode .btn-secondary { background: #d4d0c8; border: 2px outset #ccc; color: #000; }
+        #legacyMode .btn-danger { background: #d4d0c8; color: #000; }
+        #legacyMode .room-code {
+            font-size: 2rem; color: #000; font-family: 'Courier New', monospace; font-weight: normal;
         }
-        html[data-theme="dark"] .alert-success {
-            background: #1b3a2f;
-            color: #34d399;
-            border-color: #1e5f3f;
+        #legacyMode .drop-zone {
+            border: 2px dashed #999; background: #fff; border-radius: 0;
+            padding: 20px; margin: 15px 0; cursor: pointer;
         }
-        html[data-theme="dark"] .progress-bar-outer {
-            background: #374151;
+        #legacyMode .status-badge {
+            border-radius: 0; background: #eee; color: #000; border: 1px solid #ccc;
+            padding: 2px 8px; font-size: 0.8rem; display: inline-block;
         }
-        .shared-file-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 14px;
-            background: var(--input-bg);
-            border-radius: 8px;
-            margin-bottom: 6px;
-            font-size: 0.9rem;
-            border: 1px solid var(--border);
-            transition: background-color 0.25s ease, border-color 0.25s ease;
+        #legacyMode input[type="text"] {
+            border-radius: 0; border: 2px inset #ccc; background: #fff;
+            padding: 5px; font-family: 'Courier New', monospace;
         }
-        .shared-file-item .file-icon {
-            font-size: 1.4rem;
-            flex-shrink: 0;
+        #legacyMode .file-list li {
+            border-radius: 0; border: 1px solid #999; background: #fff;
+            padding: 5px; margin-bottom: 3px;
         }
-        .shared-file-item .file-info {
-            flex: 1;
-            min-width: 0;
+        #legacyMode .file-name { font-weight: normal; }
+        html[data-theme="dark"] #legacyMode .card {
+            background: #1f2937; color: #f1f5f9; border-color: #334155;
         }
-        .shared-file-item .file-name {
-            font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            color: var(--text);
+        html[data-theme="dark"] #legacyMode .btn {
+            background: #374151; color: #f1f5f9; border-color: #334155;
         }
-        .shared-file-item .file-size,
-        .shared-file-item .file-sender {
-            font-size: 0.78rem;
-            color: var(--text-secondary);
+        html[data-theme="dark"] #legacyMode .room-code { color: #818cf8; }
+        html[data-theme="dark"] #legacyMode .drop-zone {
+            background: #111827; border-color: #334155;
         }
-        .shared-file-item .btn-danger {
-            background: var(--danger);
-            color: #fff;
-            border: none;
-            border-radius: 50px;
-            padding: 5px 14px;
-            font-size: 0.8rem;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all var(--transition);
-            pointer-events: auto;
+        html[data-theme="dark"] #legacyMode input[type="text"] {
+            background: #111827; color: #f1f5f9; border-color: #334155;
         }
-        .shared-file-item .btn-danger:hover {
-            background: #dc2626;
-            transform: scale(1.05);
+        html[data-theme="dark"] #legacyMode .status-badge {
+            background: #374151; color: #f1f5f9; border-color: #334155;
         }
-        .shared-file-item .btn-download {
-            background: var(--success);
-            color: #fff;
-            border: none;
-            border-radius: 50px;
-            padding: 5px 14px;
-            font-size: 0.8rem;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all var(--transition);
-            pointer-events: auto;
+
+        /* ========== 极旧模式风格（1995年代） ========== */
+        #ancientMode .card {
+            border-radius: 0; box-shadow: none; border: 2px solid #000;
+            background: #ffffff; padding: 20px; font-family: 'Courier New', monospace;
+            color: #000; max-width: 600px; margin: 20px auto; text-align: left;
         }
-        .shared-file-item .btn-download:hover {
-            background: #059669;
-            transform: scale(1.05);
+        #ancientMode h1 {
+            font-size: 1.5em; font-weight: bold; color: #0000ff;
+            text-decoration: underline; margin-bottom: 15px;
+        }
+        #ancientMode p { font-size: 1em; margin: 10px 0; line-height: 1.3; }
+        #ancientMode .btn {
+            border-radius: 0; border: 2px outset #ccc; background: #c0c0c0;
+            color: #000; padding: 3px 10px; font-weight: normal; box-shadow: none;
+            font-family: 'Courier New', monospace; display: inline-block; cursor: pointer;
+        }
+        #ancientMode .btn:hover { background: #d0d0d0; border-style: inset; transform: none; box-shadow: none; }
+        html[data-theme="dark"] #ancientMode .card {
+            background: #1f2937; color: #f1f5f9; border-color: #334155;
+        }
+        html[data-theme="dark"] #ancientMode h1 { color: #818cf8; }
+        html[data-theme="dark"] #ancientMode .btn {
+            background: #374151; color: #f1f5f9; border-color: #334155;
+        }
+
+        /* ========== AI助手样式 ========== */
+        #aiAssistant { position: fixed; bottom: 20px; right: 20px; z-index: 999; }
+        .ai-button {
+            width: 60px; height: 60px; border-radius: 50%;
+            background: var(--primary); color: #fff; border: none; font-size: 28px; cursor: pointer;
+            box-shadow: 0 4px 14px rgba(79,110,247,0.35);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .ai-window {
+            width: 280px; background: var(--card-bg); border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2); overflow: hidden;
+            margin-bottom: 10px; display: none; border: 1px solid var(--border);
+        }
+        .ai-header { background: var(--primary); color: #fff; padding: 12px 16px; font-weight: 600; }
+        .ai-messages {
+            height: 200px; overflow-y: auto; padding: 10px;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .message {
+            padding: 8px 12px; border-radius: 12px; max-width: 85%;
+            word-break: break-word; font-size: 0.9rem;
+        }
+        .message.user { background: var(--primary); color: #fff; align-self: flex-end; }
+        .message.assistant { background: var(--input-bg); color: var(--text); align-self: flex-start; }
+        .ai-input-area { display: flex; padding: 8px; border-top: 1px solid var(--border); }
+        .ai-input {
+            flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 20px;
+            background: var(--input-bg); color: var(--text); outline: none;
+        }
+        .ai-send-btn {
+            background: var(--primary); color: #fff; border: none; border-radius: 50%;
+            width: 38px; height: 38px; margin-left: 8px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        /* ========== 手动切换按钮样式 ========== */
+        .version-switcher {
+            position: fixed; bottom: 20px; left: 20px; z-index: 999;
+            display: flex; flex-direction: column; gap: 6px;
+        }
+        .version-switcher button {
+            padding: 8px 14px; border-radius: 30px; background: rgba(255,255,255,0.9);
+            border: 1px solid #ddd; cursor: pointer; font-size: 0.8rem; font-weight: 600;
+        }
+        .version-switcher button.active {
+            background: var(--primary); color: #fff; border-color: var(--primary);
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="card" id="mainCard">
-            <div class="logo">
-                <div class="logo-icon">📁</div>
-                <div class="logo-text" data-i18n="app_title">P2P 多人文件互传</div>
-                <div class="controls">
-                    <select id="langSelect" class="lang-select" title="Language / 语言">
-                        <option value="zh">中文</option>
+    <!-- ========== 手动切换按钮 ========== -->
+    <div class="version-switcher" id="versionSwitcher">
+        <button class="active" data-version="modern">🌐 现代模式</button>
+        <button data-version="legacy">📦 兼容模式</button>
+        <button data-version="ancient">🏛️ 极旧模式</button>
+    </div>
+
+    <!-- ========== 极旧模式（含蓝牙提示） ========== -->
+    <div id="ancientMode" class="hidden">
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h1>📁 P2P 文件互传</h1>
+                <button class="theme-toggle ancient-theme-toggle" title="切换深色/浅色模式">🌙</button>
+            </div>
+            <p>您的浏览器版本过旧，无法使用此工具。</p>
+            <p>请使用现代浏览器（如 Chrome、Firefox、Edge、Safari）访问。</p>
+            <hr style="margin:20px 0;border:1px solid #000;">
+            <h2>🔵 蓝牙传输</h2>
+            <p>蓝牙文件传输需要现代浏览器支持 Web Bluetooth API，但该 API 仅用于连接低功耗蓝牙设备（如传感器），无法在两个浏览器之间直接传输文件。</p>
+            <button class="btn" id="bluetoothCheckBtn">检测蓝牙支持</button>
+            <div id="bluetoothStatus" style="margin-top:10px;"></div>
+        </div>
+    </div>
+
+    <!-- ========== 降级模式（ES5双人传输 + 多语言） ========== -->
+    <div id="legacyMode" class="hidden">
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <h1 data-legacy-i18n="title">📁 P2P 文件传输（兼容版）</h1>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <select id="legacyLangSelect" class="lang-select legacy-lang-select">
+                        <option value="zh-CN">简体中文</option>
+                        <option value="zh-TW">繁體中文</option>
                         <option value="en">English</option>
                         <option value="ja">日本語</option>
                         <option value="ko">한국어</option>
-                        <option value="ru">Русский</option>
-                        <option value="de">Deutsch</option>
-                        <option value="fr">Français</option>
-                        <option value="es">Español</option>
-                        <option value="ar">العربية</option>
-                        <option value="pt">Português</option>
-                        <option value="it">Italiano</option>
-                        <option value="nl">Nederlands</option>
-                        <option value="pl">Polski</option>
-                        <option value="tr">Türkçe</option>
-                        <option value="vi">Tiếng Việt</option>
-                        <option value="th">ไทย</option>
-                        <option value="id">Bahasa Indonesia</option>
-                        <option value="hi">हिन्दी</option>
-                        <option value="mn">Монгол</option>
                     </select>
-                    <button class="theme-toggle" id="themeToggle" title="切换深色/浅色模式" aria-label="切换主题">🌙</button>
+                    <button class="theme-toggle legacy-theme-toggle" title="切换深色/浅色模式">🌙</button>
                 </div>
             </div>
-            <p class="subtitle" data-i18n="app_subtitle">多人实时文件共享<br>房主可管理共享文件</p>
+            <p data-legacy-i18n="subtitle">适用于较旧浏览器，仅支持双人传输。</p>
+            <div id="legacyScreenIdle">
+                <button class="btn" id="legacyBtnCreate" data-legacy-i18n="create">✨ 创建房间</button>
+                <button class="btn btn-secondary" id="legacyBtnJoin" data-legacy-i18n="join">🔗 加入房间</button>
+            </div>
+            <div id="legacyScreenJoin" class="hidden">
+                <div style="display:flex; gap:10px; align-items:center; justify-content:center; margin:20px 0;">
+                    <input type="text" id="legacyRoomCodeInput" placeholder="输入房间号" maxlength="8" data-legacy-i18n-placeholder="room_code_placeholder">
+                    <button class="btn" id="legacyBtnJoinConfirm" data-legacy-i18n="join_confirm">加入</button>
+                </div>
+                <button class="btn btn-secondary" id="legacyBtnBack" data-legacy-i18n="back">← 返回</button>
+            </div>
+            <div id="legacyScreenRoom" class="hidden">
+                <div style="margin:20px 0;">
+                    <div data-legacy-i18n="room_code_label">房间号</div>
+                    <div class="room-code" id="legacyRoomCodeDisplay">------</div>
+                    <button class="btn btn-secondary" id="legacyBtnCopyRoom" data-legacy-i18n="copy_code">📋 复制房间号</button>
+                </div>
+                <div id="legacyDropZone" style="border:2px dashed #ccc;border-radius:10px;padding:30px;margin:20px 0;cursor:pointer;">
+                    <span>📎</span>
+                    <p data-legacy-i18n="drop_hint">点击或拖拽文件到此处发送</p>
+                    <input type="file" id="legacyFileInput" multiple style="display:none;">
+                </div>
+                <div id="legacySendStatus" class="text-center" data-legacy-i18n="waiting_connection">等待连接...</div>
+                <div id="legacyReceiveStatus" class="text-center" data-legacy-i18n="waiting_receive">等待接收...</div>
+                <button class="btn btn-secondary" id="legacyBtnRestart" data-legacy-i18n="restart">重新开始</button>
+            </div>
+        </div>
+    </div>
 
+    <!-- ========== 现代模式（多人互传 + AI助手） ========== -->
+    <div id="modernMode" class="hidden">
+        <div class="card">
+            <div class="controls">
+                <select id="langSelect" class="lang-select" title="Language / 语言">
+                    <option value="zh-CN">简体中文</option>
+                    <option value="zh-TW">繁體中文</option>
+                    <option value="en">English</option>
+                    <option value="ja">日本語</option>
+                    <option value="ko">한국어</option>
+                    <option value="ru">Русский</option>
+                    <option value="de">Deutsch</option>
+                    <option value="fr">Français</option>
+                    <option value="es">Español</option>
+                    <option value="ar">العربية</option>
+                    <option value="pt">Português</option>
+                    <option value="it">Italiano</option>
+                    <option value="nl">Nederlands</option>
+                    <option value="pl">Polski</option>
+                    <option value="tr">Türkçe</option>
+                    <option value="vi">Tiếng Việt</option>
+                    <option value="th">ไทย</option>
+                    <option value="id">Bahasa Indonesia</option>
+                    <option value="hi">हिन्दी</option>
+                    <option value="mn">Монгол</option>
+                </select>
+                <button class="theme-toggle modern-theme-toggle" title="切换深色/浅色模式">🌙</button>
+            </div>
+            <h1 data-i18n="app_title">P2P 多人文件互传</h1>
+            <p data-i18n="app_subtitle">多人实时文件共享，房主可管理共享文件</p>
             <div id="screenIdle">
-                <div class="btn-row">
-                    <button class="btn btn-primary" id="btnCreate" data-i18n="create_room">✨ 创建房间</button>
-                    <button class="btn btn-secondary" id="btnJoin" data-i18n="join_room">🔗 加入房间</button>
-                </div>
+                <button class="btn btn-primary" id="btnCreate" data-i18n="create_room">✨ 创建房间</button>
+                <button class="btn btn-secondary" id="btnJoin" data-i18n="join_room">🔗 加入房间</button>
             </div>
-
-            <div id="screenJoin" class="hidden fade-in">
-                <div class="input-group mb-3">
-                    <input type="text" id="roomCodeInput" placeholder="输入房间号" maxlength="8" autocomplete="off"
-                    autocorrect="off" autocapitalize="characters" spellcheck="false" data-i18n-placeholder="placeholder_room_code">
+            <div id="screenJoin" class="hidden">
+                <div style="display:flex; gap:10px; align-items:center; justify-content:center; margin:20px 0;">
+                    <input type="text" id="roomCodeInput" placeholder="输入房间号" maxlength="8" data-i18n-placeholder="placeholder_room_code" style="padding:10px;border-radius:20px;border:1px solid #ccc;">
                     <button class="btn btn-primary" id="btnJoinConfirm" data-i18n="join">加入</button>
                 </div>
-                <button class="btn btn-secondary btn-sm btn-block" id="btnBack" data-i18n="back">← 返回</button>
-                <div id="joinStatus" class="hidden"></div>
+                <button class="btn btn-secondary" id="btnBack" data-i18n="back">← 返回</button>
             </div>
-
-            <div id="screenRoom" class="hidden fade-in">
-                <div class="room-display">
-                    <div class="room-label" id="roomInfoLabel" data-i18n="room_number">房间号</div>
+            <div id="screenRoom" class="hidden">
+                <div style="margin:20px 0;">
+                    <div id="roomInfoLabel" data-i18n="room_number">房间号</div>
                     <div class="room-code" id="roomCodeDisplay">------</div>
-                    <div class="mt-2" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
-                        <button class="btn btn-secondary btn-sm copy-tooltip" id="btnCopyRoom" data-i18n="copy_room">📋 复制房间号</button>
-                        <button class="btn btn-secondary btn-sm" id="btnShareLink" data-i18n="copy_link">🔗 复制链接</button>
+                    <div style="margin-top:10px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+                        <button class="btn btn-secondary" id="btnCopyRoom" data-i18n="copy_room">📋 复制房间号</button>
+                        <button class="btn btn-secondary" id="btnShareLink" data-i18n="copy_link">🔗 复制链接</button>
                     </div>
                 </div>
-
-                <div class="drop-zone" id="dropZone">
-                    <span class="drop-zone-icon">📎</span>
-                    <p class="drop-zone-text" data-i18n="drop_hint">点击或拖拽文件到此处分享给所有人</p>
-                    <p class="drop-zone-hint" data-i18n="drop_sub">支持任意类型文件，可选择多个</p>
-                    <input type="file" id="fileInput" multiple>
+                <div id="dropZone" class="drop-zone">
+                    <span>📎</span>
+                    <p data-i18n="drop_hint">点击或拖拽文件到此处分享给所有人</p>
+                    <p data-i18n="drop_sub">支持任意类型文件，可选择多个</p>
+                    <input type="file" id="fileInput" multiple style="display:none;">
                 </div>
-                <ul class="file-list hidden" id="fileList"></ul>
-                <div id="sendStatus" class="text-center mt-3">
+                <div id="sendStatus" class="text-center">
                     <span class="status-badge status-connecting">
-                        <span class="status-dot connecting"></span> <span data-i18n="waiting_for_connection">等待成员...</span>
+                        <span class="status-dot"></span> <span data-i18n="waiting_for_connection">等待成员...</span>
                     </span>
                 </div>
                 <div id="sendProgress" class="hidden">
-                    <div class="progress-wrapper">
-                        <div class="progress-header">
-                            <span id="sendProgressLabel">发送中...</span>
-                            <span class="speed-text" id="sendSpeed"></span>
-                        </div>
-                        <div class="progress-bar-outer">
-                            <div class="progress-bar-inner" id="sendProgressBar"></div>
-                        </div>
+                    <div class="progress-bar-outer">
+                        <div class="progress-bar-inner" id="sendProgressBar"></div>
                     </div>
+                    <div id="sendProgressLabel" style="font-size:0.8rem; color:#5a5a7a;"></div>
                 </div>
-
-                <div class="divider" data-i18n="shared_files_section">共享文件</div>
+                <div style="margin-top:20px;" data-i18n="shared_files_section">共享文件</div>
                 <div id="sharedFilesContainer">
-                    <p style="font-weight:600;margin-bottom:8px;" data-i18n="shared_files_list">📂 共享文件列表：</p>
+                    <p data-i18n="shared_files_list">📂 共享文件列表：</p>
                     <ul class="file-list" id="sharedFileList"></ul>
                 </div>
-
-                <button class="btn btn-secondary btn-sm btn-block mt-3" id="btnRestart" data-i18n="restart">重新开始</button>
+                <button class="btn btn-secondary" id="btnRestart" data-i18n="restart">重新开始</button>
             </div>
-
             <div id="globalAlert" class="hidden"></div>
         </div>
     </div>
 
+    <!-- ========== AI助手浮窗 ========== -->
+    <div id="aiAssistant">
+        <div class="ai-window" id="aiWindow">
+            <div class="ai-header">🤖 AI助手</div>
+            <div class="ai-messages" id="aiMessages">
+                <div class="message assistant">你好！我是AI助手，可以问我关于本页面的使用问题。</div>
+            </div>
+            <div class="ai-input-area">
+                <input type="text" class="ai-input" id="aiInput" placeholder="输入问题...">
+                <button class="ai-send-btn" id="aiSendBtn">➤</button>
+            </div>
+        </div>
+        <button class="ai-button" id="aiToggleBtn">💬</button>
+    </div>
+
     <script>
-        // ============ 翻译字典（19种语言，已包含新增键） ============
-        const translations = {
-            zh: {
-                app_title: 'P2P 多人文件互传',
-                app_subtitle: '多人实时文件共享<br>房主可管理共享文件',
-                create_room: '✨ 创建房间',
-                join_room: '🔗 加入房间',
-                back: '← 返回',
-                join: '加入',
-                placeholder_room_code: '输入房间号',
-                room_number: '房间号',
-                connected_to_room: '已连接到房间',
-                copy_room: '📋 复制房间号',
-                copy_link: '🔗 复制链接',
-                drop_hint: '点击或拖拽文件到此处分享给所有人',
-                drop_sub: '支持任意类型文件，可选择多个',
-                waiting_for_connection: '等待成员...',
-                waiting_for_peer: '等待成员连接...',
-                peer_connected: '成员已连接',
-                connected_can_send: '已连接，可以分享文件',
-                waiting_for_files: '等待接收文件...',
-                waiting_for_files_short: '等待文件...',
-                sending_files: '正在发送文件...',
-                sending_progress: '发送中... {percent}%',
-                send_complete: '发送完成！',
-                receiving_files_count: '正在接收 {count} 个文件...',
-                receiving_file_info: '📥 接收文件：{names}（共 {size}）',
-                receive_complete: '全部接收完成！',
-                transfer_complete: '传输完成！',
-                all_sent: '所有文件发送完成！',
-                all_received: '所有文件接收完成！',
-                read_error: '读取文件失败',
-                connection_closed: '连接已关闭',
-                data_error: '数据传输错误',
-                room_not_found: '找不到该房间，请确认房间号是否正确',
-                network_error: '网络连接问题，请检查网络后重试',
-                room_conflict: '房间号冲突，已重新生成',
-                copy_success: '链接已复制！发送给朋友即可',
-                link_copied: '链接已复制！',
-                remove_file: '移除',
-                download: '⬇ 下载',
-                delete: '🗑 删除',
-                restart: '重新开始',
-                receive_section: '接收',
-                received_files: '✅ 接收完成的文件：',
-                connecting_room: '正在连接房间...',
-                join_status_error: '房间不存在',
-                join_status_network: '网络连接问题',
-                transfer_complete_alert: '文件传输完成！',
-                shared_files_section: '共享文件',
-                shared_files_list: '📂 共享文件列表：',
-                file_owner: '发送者',
-            },
-            en: {
-                app_title: 'P2P Multi-User File Sharing',
-                app_subtitle: 'Real-time file sharing for multiple users<br>Host can manage shared files',
-                create_room: '✨ Create Room',
-                join_room: '🔗 Join Room',
-                back: '← Back',
-                join: 'Join',
-                placeholder_room_code: 'Enter room code',
-                room_number: 'Room Code',
-                connected_to_room: 'Connected to room',
-                copy_room: '📋 Copy Room Code',
-                copy_link: '🔗 Copy Link',
-                drop_hint: 'Click or drag files here to share with everyone',
-                drop_sub: 'Supports any file type, multiple files',
-                waiting_for_connection: 'Waiting for members...',
-                waiting_for_peer: 'Waiting for members...',
-                peer_connected: 'Member connected',
-                connected_can_send: 'Connected, ready to share',
-                waiting_for_files: 'Waiting for files...',
-                waiting_for_files_short: 'Waiting for files...',
-                sending_files: 'Sending files...',
-                sending_progress: 'Sending... {percent}%',
-                send_complete: 'Send complete!',
-                receiving_files_count: 'Receiving {count} files...',
-                receiving_file_info: '📥 Receiving: {names} (total {size})',
-                receive_complete: 'All received!',
-                transfer_complete: 'Transfer complete!',
-                all_sent: 'All files sent!',
-                all_received: 'All files received!',
-                read_error: 'Failed to read file',
-                connection_closed: 'Connection closed',
-                data_error: 'Data transfer error',
-                room_not_found: 'Room not found, please check the code',
-                network_error: 'Network error, please try again',
-                room_conflict: 'Room code conflict, regenerated',
-                copy_success: 'Link copied! Send to your friend',
-                link_copied: 'Link copied!',
-                remove_file: 'Remove',
-                download: '⬇ Download',
-                delete: '🗑 Delete',
-                restart: 'Restart',
-                receive_section: 'Receive',
-                received_files: '✅ Received files:',
-                connecting_room: 'Connecting to room...',
-                join_status_error: 'Room not found',
-                join_status_network: 'Network error',
-                transfer_complete_alert: 'File transfer complete!',
-                shared_files_section: 'Shared Files',
-                shared_files_list: '📂 Shared file list:',
-                file_owner: 'Sender',
-            },
-            // 其他语言翻译（保留原有语言及新增键）
-            ja: {
-                app_title: 'P2P 多人数ファイル共有',
-                app_subtitle: '複数人でリアルタイムファイル共有<br>ホストが共有ファイルを管理可能',
-                create_room: '✨ 部屋を作成',
-                join_room: '🔗 部屋に参加',
-                back: '← 戻る',
-                join: '参加',
-                placeholder_room_code: '部屋番号を入力',
-                room_number: '部屋番号',
-                connected_to_room: '部屋に接続済み',
-                copy_room: '📋 部屋番号をコピー',
-                copy_link: '🔗 リンクをコピー',
-                drop_hint: 'ここをクリックまたはドラッグして全員に共有',
-                drop_sub: '任意のファイルタイプ、複数選択可能',
-                waiting_for_connection: 'メンバーを待っています...',
-                waiting_for_peer: 'メンバーを待っています...',
-                peer_connected: 'メンバーが接続しました',
-                connected_can_send: '接続済み、共有準備完了',
-                waiting_for_files: 'ファイルを待っています...',
-                waiting_for_files_short: 'ファイル待機中...',
-                sending_files: 'ファイル送信中...',
-                sending_progress: '送信中... {percent}%',
-                send_complete: '送信完了！',
-                receiving_files_count: '{count}個のファイルを受信中...',
-                receiving_file_info: '📥 受信：{names}（合計 {size}）',
-                receive_complete: 'すべて受信完了！',
-                transfer_complete: '転送完了！',
-                all_sent: 'すべてのファイルを送信しました！',
-                all_received: 'すべてのファイルを受信しました！',
-                read_error: 'ファイルの読み取りに失敗',
-                connection_closed: '接続が閉じられました',
-                data_error: 'データ転送エラー',
-                room_not_found: '部屋が見つかりません。部屋番号を確認してください',
-                network_error: 'ネットワークエラー、再試行してください',
-                room_conflict: '部屋番号が衝突したため再生成しました',
-                copy_success: 'リンクをコピーしました！友達に送信してください',
-                link_copied: 'リンクをコピーしました！',
-                remove_file: '削除',
-                download: '⬇ ダウンロード',
-                delete: '🗑 削除',
-                restart: '再開',
-                receive_section: '受信',
-                received_files: '✅ 受信完了ファイル：',
-                connecting_room: '部屋に接続中...',
-                join_status_error: '部屋が見つかりません',
-                join_status_network: 'ネットワークエラー',
-                transfer_complete_alert: 'ファイル転送完了！',
-                shared_files_section: '共有ファイル',
-                shared_files_list: '📂 共有ファイルリスト：',
-                file_owner: '送信者',
-            },
-            // 其余语言类似，为避免过长，此处省略，但实际代码中包含全部
-            // 为节省篇幅，以下仅提供框架，实际使用需包含所有语言
-            // 你可以参考之前代码，将新增键添加到每种语言中
-        };
-
-        // 注意：上述 translations 对象中其他语言需要补齐，这里仅展示 zh、en、ja，实际完整代码包含全部19种语言。
-        // 由于篇幅限制，我们将在后续代码中直接使用一个简化但完整的 translations 对象，包含所有语言。
-        // 为保持功能完整，我们直接使用一个预定义的完整对象（已在内存中构建）。
-
-        // ============ 全局变量 ============
-        let currentLang = localStorage.getItem('lang') || 'zh';
-        let peer = null;
-        let conns = {}; // peerId -> DataConnection
-        let myPeerId = null;
-        let roomId = '';
-        let isHost = false;
-        let appState = 'idle';
-        let selectedFiles = [];
-        let sharedFiles = []; // 共享文件列表 [{id, name, size, senderName, senderId, url}]
-        let totalBytesSent = 0;
-        let totalBytesToSend = 0;
-        let lastSpeedUpdate = 0;
-        let bytesSinceLastUpdate = 0;
-        let transferComplete = false;
-        let currentSendStatus = null;
-
-        const $ = (sel) => document.querySelector(sel);
-        const themeToggleBtn = $('#themeToggle');
-        const langSelect = $('#langSelect');
-        const screenIdle = $('#screenIdle');
-        const screenJoin = $('#screenJoin');
-        const screenRoom = $('#screenRoom');
-        const roomCodeDisplay = $('#roomCodeDisplay');
-        const roomInfoLabel = $('#roomInfoLabel');
-        const roomCodeInput = $('#roomCodeInput');
-        const fileInput = $('#fileInput');
-        const fileList = $('#fileList');
-        const dropZone = $('#dropZone');
-        const sendStatus = $('#sendStatus');
-        const sendProgress = $('#sendProgress');
-        const sendProgressBar = $('#sendProgressBar');
-        const sendProgressLabel = $('#sendProgressLabel');
-        const sendSpeed = $('#sendSpeed');
-        const sharedFileList = $('#sharedFileList');
-        const globalAlert = $('#globalAlert');
-        const joinStatus = $('#joinStatus');
-        const btnCopyRoom = $('#btnCopyRoom');
-        const htmlElement = document.documentElement;
-
-        // ============ 工具函数 ============
-        function t(key, vars) {
-            // 简化处理：由于完整翻译对象过长，这里直接使用内置的完整 translations（已在前面定义）
-            let text = (translations[currentLang] && translations[currentLang][key]) || translations.zh[key] || key;
-            if (vars) {
-                Object.keys(vars).forEach(k => { text = text.replace(`{${k}}`, vars[k]); });
-            }
-            return text;
+        // ========== 浏览器特性检测 ==========
+        function isModernBrowser() {
+            try {
+                return typeof Promise !== 'undefined' &&
+                       typeof TextEncoder !== 'undefined' &&
+                       typeof RTCPeerConnection !== 'undefined' &&
+                       typeof WebSocket !== 'undefined';
+            } catch (e) { return false; }
+        }
+        function isLegacyBrowser() {
+            try {
+                return typeof RTCPeerConnection !== 'undefined' &&
+                       typeof ArrayBuffer !== 'undefined' &&
+                       typeof Blob !== 'undefined' &&
+                       typeof FileReader !== 'undefined';
+            } catch (e) { return false; }
         }
 
+        // ========== 全局主题切换 ==========
         function applyTheme(theme) {
-            htmlElement.setAttribute('data-theme', theme);
+            document.documentElement.setAttribute('data-theme', theme);
             localStorage.setItem('theme', theme);
-            themeToggleBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
+            document.querySelectorAll('.theme-toggle').forEach(btn => {
+                btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+            });
+        }
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme') || 'light';
+            applyTheme(current === 'dark' ? 'light' : 'dark');
         }
         applyTheme(localStorage.getItem('theme') || 'light');
-        themeToggleBtn.addEventListener('click', () => {
-            const newTheme = htmlElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-            applyTheme(newTheme);
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('theme-toggle')) {
+                toggleTheme();
+            }
         });
 
-        function applyLanguage() {
-            if (currentLang === 'ar') {
-                htmlElement.setAttribute('dir', 'rtl');
+        // ========== 版本切换控制 ==========
+        let currentVersion = 'modern';
+        let modernInitialized = false;
+        let legacyInitialized = false;
+        const versionButtons = document.querySelectorAll('.version-switcher button');
+        const modernModeDiv = document.getElementById('modernMode');
+        const legacyModeDiv = document.getElementById('legacyMode');
+        const ancientModeDiv = document.getElementById('ancientMode');
+
+        function showVersion(version) {
+            modernModeDiv.classList.add('hidden');
+            legacyModeDiv.classList.add('hidden');
+            ancientModeDiv.classList.add('hidden');
+            if (version === 'modern') {
+                modernModeDiv.classList.remove('hidden');
+                if (!modernInitialized) initModern();
+            } else if (version === 'legacy') {
+                legacyModeDiv.classList.remove('hidden');
+                if (!legacyInitialized) initLegacy();
+            } else if (version === 'ancient') {
+                ancientModeDiv.classList.remove('hidden');
+            }
+            versionButtons.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.version === version);
+            });
+            currentVersion = version;
+        }
+
+        versionButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                showVersion(this.dataset.version);
+            });
+        });
+
+        function autoDetectVersion() {
+            if (isModernBrowser()) return 'modern';
+            if (isLegacyBrowser()) return 'legacy';
+            return 'ancient';
+        }
+        showVersion(autoDetectVersion());
+
+        // 蓝牙检测按钮（极旧模式）
+        document.getElementById('bluetoothCheckBtn').addEventListener('click', function() {
+            var status = document.getElementById('bluetoothStatus');
+            if (navigator.bluetooth) {
+                status.textContent = '✅ 此浏览器支持 Web Bluetooth API，但无法用于文件传输。';
             } else {
-                htmlElement.setAttribute('dir', 'ltr');
+                status.textContent = '❌ 此浏览器不支持 Web Bluetooth API。';
             }
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.getAttribute('data-i18n');
-                if (key === 'app_subtitle') el.innerHTML = t(key);
-                else el.textContent = t(key);
-            });
-            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-                el.setAttribute('placeholder', t(el.getAttribute('data-i18n-placeholder')));
-            });
-            renderSharedFiles(); // 重新渲染共享文件列表以更新按钮文字
-            if (currentSendStatus) {
-                updateSendStatus(currentSendStatus.status, currentSendStatus.key, currentSendStatus.vars);
-            }
-        }
-        langSelect.value = currentLang;
-        langSelect.addEventListener('change', function() {
-            currentLang = this.value;
-            localStorage.setItem('lang', currentLang);
-            applyLanguage();
         });
 
-        const PEER_SERVER = { host: '0.peerjs.com', port: 443, secure: true };
-        const CHUNK_SIZE = 65536;
-        const ROOM_ID_LENGTH = 6;
-        const ROOM_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+        // ========== 现代模式代码 ==========
+        function initModern() {
+            if (modernInitialized) return;
+            modernInitialized = true;
 
-        function generateRoomId() {
-            let result = '';
-            for (let i = 0; i < ROOM_ID_LENGTH; i++) result += ROOM_CHARS[Math.floor(Math.random() * ROOM_CHARS.length)];
-            return result;
-        }
-        function formatSize(bytes) {
-            if (bytes === 0) return '0 B';
-            const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(1024));
-            return (bytes / Math.pow(1024, i)).toFixed(i >= 2 ? 2 : 1) + ' ' + units[i];
-        }
-        function formatSpeed(bytesPerSec) {
-            if (bytesPerSec < 1024) return bytesPerSec.toFixed(0) + ' B/s';
-            if (bytesPerSec < 1024 * 1024) return (bytesPerSec / 1024).toFixed(1) + ' KB/s';
-            return (bytesPerSec / (1024 * 1024)).toFixed(2) + ' MB/s';
-        }
-        function showAlert(message, type = 'info') {
-            globalAlert.className = 'alert alert-' + type + ' fade-in';
-            globalAlert.textContent = message;
-            globalAlert.classList.remove('hidden');
-            clearTimeout(globalAlert._timeout);
-            globalAlert._timeout = setTimeout(() => globalAlert.classList.add('hidden'), 4000);
-        }
-        function hideAllScreens() { [screenIdle, screenJoin, screenRoom].forEach(s => s.classList.add('hidden')); }
-        function showScreen(screen) {
-            hideAllScreens();
-            screen.classList.remove('hidden');
-            screen.classList.add('fade-in');
-        }
-        function cleanupPeer() {
-            if (peer) { try { peer.destroy(); } catch (e) {} peer = null; }
-            conns = {};
-            myPeerId = null;
-            roomId = '';
-            isHost = false;
-            sharedFiles = [];
-            selectedFiles = [];
-            transferComplete = false;
-        }
-        function resetAll() {
-            cleanupPeer();
-            appState = 'idle';
-            fileInput.value = '';
-            fileList.innerHTML = '';
-            fileList.classList.add('hidden');
-            sharedFileList.innerHTML = '';
-            sendProgress.classList.add('hidden');
-            sendProgressBar.style.width = '0%';
-            sendProgressBar.classList.remove('complete');
-            sendSpeed.textContent = '';
-            joinStatus.classList.add('hidden');
-            globalAlert.classList.add('hidden');
-            roomCodeInput.value = '';
-            btnCopyRoom.classList.remove('copied');
-            currentSendStatus = null;
-            showScreen(screenIdle);
-            applyLanguage();
-        }
+            const translations = {
+                'zh-CN': {
+                    app_title: 'P2P 多人文件互传',
+                    app_subtitle: '多人实时文件共享，房主可管理共享文件',
+                    create_room: '✨ 创建房间',
+                    join_room: '🔗 加入房间',
+                    back: '← 返回',
+                    join: '加入',
+                    placeholder_room_code: '输入房间号',
+                    room_number: '房间号',
+                    connected_to_room: '已连接到房间',
+                    copy_room: '📋 复制房间号',
+                    copy_link: '🔗 复制链接',
+                    drop_hint: '点击或拖拽文件到此处分享给所有人',
+                    drop_sub: '支持任意类型文件，可选择多个',
+                    waiting_for_connection: '等待成员...',
+                    waiting_for_peer: '等待成员连接...',
+                    peer_connected: '成员已连接',
+                    connected_can_send: '已连接，可以分享文件',
+                    waiting_for_files: '等待接收文件...',
+                    waiting_for_files_short: '等待文件...',
+                    sending_files: '正在发送文件...',
+                    sending_progress: '发送中... {percent}%',
+                    send_complete: '发送完成！',
+                    receiving_files_count: '正在接收 {count} 个文件...',
+                    receiving_file_info: '📥 接收文件：{names}（共 {size}）',
+                    receive_complete: '全部接收完成！',
+                    transfer_complete: '传输完成！',
+                    all_sent: '所有文件发送完成！',
+                    all_received: '所有文件接收完成！',
+                    read_error: '读取文件失败',
+                    connection_closed: '连接已关闭',
+                    data_error: '数据传输错误',
+                    room_not_found: '找不到该房间，请确认房间号是否正确',
+                    network_error: '网络连接问题，请检查网络后重试',
+                    room_conflict: '房间号冲突，已重新生成',
+                    copy_success: '链接已复制！发送给朋友即可',
+                    link_copied: '链接已复制！',
+                    remove_file: '移除',
+                    download: '⬇ 下载',
+                    delete: '🗑 删除',
+                    restart: '重新开始',
+                    receive_section: '接收',
+                    received_files: '✅ 接收完成的文件：',
+                    connecting_room: '正在连接房间...',
+                    join_status_error: '房间不存在',
+                    join_status_network: '网络连接问题',
+                    transfer_complete_alert: '文件传输完成！',
+                    shared_files_section: '共享文件',
+                    shared_files_list: '📂 共享文件列表：',
+                    file_owner: '发送者',
+                },
+                'zh-TW': {
+                    app_title: 'P2P 多人檔案互傳',
+                    app_subtitle: '多人即時檔案共享，房主可管理共享檔案',
+                    create_room: '✨ 建立房間',
+                    join_room: '🔗 加入房間',
+                    back: '← 返回',
+                    join: '加入',
+                    placeholder_room_code: '輸入房間號',
+                    room_number: '房間號',
+                    connected_to_room: '已連接到房間',
+                    copy_room: '📋 複製房間號',
+                    copy_link: '🔗 複製連結',
+                    drop_hint: '點擊或拖曳檔案到此處分享給所有人',
+                    drop_sub: '支援任意類型檔案，可選擇多個',
+                    waiting_for_connection: '等待成員...',
+                    waiting_for_peer: '等待成員連線...',
+                    peer_connected: '成員已連線',
+                    connected_can_send: '已連線，可以分享檔案',
+                    waiting_for_files: '等待接收檔案...',
+                    waiting_for_files_short: '等待檔案...',
+                    sending_files: '正在傳送檔案...',
+                    sending_progress: '傳送中... {percent}%',
+                    send_complete: '傳送完成！',
+                    receiving_files_count: '正在接收 {count} 個檔案...',
+                    receiving_file_info: '📥 接收檔案：{names}（共 {size}）',
+                    receive_complete: '全部接收完成！',
+                    transfer_complete: '傳輸完成！',
+                    all_sent: '所有檔案傳送完成！',
+                    all_received: '所有檔案接收完成！',
+                    read_error: '讀取檔案失敗',
+                    connection_closed: '連線已關閉',
+                    data_error: '資料傳輸錯誤',
+                    room_not_found: '找不到該房間，請確認房間號是否正確',
+                    network_error: '網路連線問題，請檢查網路後重試',
+                    room_conflict: '房間號衝突，已重新生成',
+                    copy_success: '連結已複製！傳送給朋友即可',
+                    link_copied: '連結已複製！',
+                    remove_file: '移除',
+                    download: '⬇ 下載',
+                    delete: '🗑 刪除',
+                    restart: '重新開始',
+                    receive_section: '接收',
+                    received_files: '✅ 接收完成的檔案：',
+                    connecting_room: '正在連線房間...',
+                    join_status_error: '房間不存在',
+                    join_status_network: '網路連線問題',
+                    transfer_complete_alert: '檔案傳輸完成！',
+                    shared_files_section: '共享檔案',
+                    shared_files_list: '📂 共享檔案列表：',
+                    file_owner: '傳送者',
+                },
+                en: {
+                    app_title: 'P2P Multi-User File Sharing',
+                    app_subtitle: 'Real-time file sharing for multiple users. Host can manage shared files.',
+                    create_room: '✨ Create Room',
+                    join_room: '🔗 Join Room',
+                    back: '← Back',
+                    join: 'Join',
+                    placeholder_room_code: 'Enter room code',
+                    room_number: 'Room Code',
+                    connected_to_room: 'Connected to room',
+                    copy_room: '📋 Copy Room Code',
+                    copy_link: '🔗 Copy Link',
+                    drop_hint: 'Click or drag files here to share with everyone',
+                    drop_sub: 'Supports any file type, multiple files',
+                    waiting_for_connection: 'Waiting for members...',
+                    waiting_for_peer: 'Waiting for members...',
+                    peer_connected: 'Member connected',
+                    connected_can_send: 'Connected, ready to share',
+                    waiting_for_files: 'Waiting for files...',
+                    waiting_for_files_short: 'Waiting for files...',
+                    sending_files: 'Sending files...',
+                    sending_progress: 'Sending... {percent}%',
+                    send_complete: 'Send complete!',
+                    receiving_files_count: 'Receiving {count} files...',
+                    receiving_file_info: '📥 Receiving: {names} (total {size})',
+                    receive_complete: 'All received!',
+                    transfer_complete: 'Transfer complete!',
+                    all_sent: 'All files sent!',
+                    all_received: 'All files received!',
+                    read_error: 'Failed to read file',
+                    connection_closed: 'Connection closed',
+                    data_error: 'Data transfer error',
+                    room_not_found: 'Room not found, please check the code',
+                    network_error: 'Network error, please try again',
+                    room_conflict: 'Room code conflict, regenerated',
+                    copy_success: 'Link copied! Send to your friend',
+                    link_copied: 'Link copied!',
+                    remove_file: 'Remove',
+                    download: '⬇ Download',
+                    delete: '🗑 Delete',
+                    restart: 'Restart',
+                    receive_section: 'Receive',
+                    received_files: '✅ Received files:',
+                    connecting_room: 'Connecting to room...',
+                    join_status_error: 'Room not found',
+                    join_status_network: 'Network error',
+                    transfer_complete_alert: 'File transfer complete!',
+                    shared_files_section: 'Shared Files',
+                    shared_files_list: '📂 Shared file list:',
+                    file_owner: 'Sender',
+                }
+            };
 
-        // ============ 网络连接管理 ============
-        function setupConnection(conn) {
-            const peerId = conn.peer;
-            conns[peerId] = conn;
-            conn.on('open', () => {
-                console.log('连接已建立:', peerId);
-                if (isHost && !knownPeers.includes(peerId)) {
-                    knownPeers.push(peerId);
-                    // 广播新成员给所有其他成员
-                    broadcast({ type: 'peer-joined', peerId: peerId });
-                    // 发送现有成员列表给新成员
-                    conn.send(JSON.stringify({ type: 'peers-list', peers: knownPeers.filter(p => p !== peerId) }));
+            let currentLang = localStorage.getItem('lang') || 'zh-CN';
+            let peer = null;
+            let conns = {};
+            let myPeerId = null;
+            let roomId = '';
+            let isHost = false;
+            let appState = 'idle';
+            let selectedFiles = [];
+            let sharedFiles = [];
+            let knownPeers = [];
+            let receivingFiles = {};
+            let totalBytesSent = 0;
+            let totalBytesToSend = 0;
+            let totalBytesReceived = 0;
+            let totalBytesToReceive = 0;
+            let lastSpeedUpdate = 0;
+            let bytesSinceLastUpdate = 0;
+            let transferComplete = false;
+            let currentSendStatus = null;
+
+            const $ = (sel) => document.querySelector(sel);
+            const langSelect = $('#langSelect');
+            const screenIdle = $('#screenIdle');
+            const screenJoin = $('#screenJoin');
+            const screenRoom = $('#screenRoom');
+            const roomCodeDisplay = $('#roomCodeDisplay');
+            const roomInfoLabel = $('#roomInfoLabel');
+            const roomCodeInput = $('#roomCodeInput');
+            const fileInput = $('#fileInput');
+            const dropZone = $('#dropZone');
+            const sendStatus = $('#sendStatus');
+            const sendProgress = $('#sendProgress');
+            const sendProgressBar = $('#sendProgressBar');
+            const sendProgressLabel = $('#sendProgressLabel');
+            const sharedFileList = $('#sharedFileList');
+            const globalAlert = $('#globalAlert');
+            const btnCopyRoom = $('#btnCopyRoom');
+            const htmlElement = document.documentElement;
+
+            function t(key, vars) {
+                let text = (translations[currentLang] && translations[currentLang][key]) || translations['zh-CN'][key] || key;
+                if (vars) {
+                    Object.keys(vars).forEach(k => { text = text.replace(`{${k}}`, vars[k]); });
                 }
-                if (!isHost && peerId === roomId) {
-                    // 连接房主成功后发送自己的peerId
-                    conn.send(JSON.stringify({ type: 'hello', peerId: myPeerId }));
+                return text;
+            }
+            function applyLanguage() {
+                if (currentLang === 'ar') {
+                    htmlElement.setAttribute('dir', 'rtl');
+                } else {
+                    htmlElement.setAttribute('dir', 'ltr');
                 }
-                updateSendStatus('connected', 'connected_can_send');
+                document.querySelectorAll('[data-i18n]').forEach(el => {
+                    const key = el.getAttribute('data-i18n');
+                    if (key === 'app_subtitle') el.innerHTML = t(key);
+                    else el.textContent = t(key);
+                });
+                document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                    el.setAttribute('placeholder', t(el.getAttribute('data-i18n-placeholder')));
+                });
+                renderSharedFiles();
+                if (currentSendStatus) {
+                    updateSendStatus(currentSendStatus.status, currentSendStatus.key, currentSendStatus.vars);
+                }
+            }
+            langSelect.value = currentLang;
+            langSelect.addEventListener('change', function() {
+                currentLang = this.value;
+                localStorage.setItem('lang', currentLang);
+                applyLanguage();
             });
-            conn.on('data', handleData);
-            conn.on('close', () => {
-                delete conns[peerId];
-                if (isHost) {
-                    const idx = knownPeers.indexOf(peerId);
-                    if (idx > -1) knownPeers.splice(idx, 1);
-                    broadcast({ type: 'peer-left', peerId: peerId });
-                }
-            });
-            conn.on('error', () => showAlert(t('data_error'), 'error'));
-        }
 
-        let knownPeers = []; // 房主维护的成员列表
+            const PEER_SERVER = { host: '0.peerjs.com', port: 443, secure: true };
+            const CHUNK_SIZE = 65536;
+            const ROOM_ID_LENGTH = 6;
+            const ROOM_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
-        function handleData(data) {
-            if (typeof data === 'string') {
-                const msg = JSON.parse(data);
-                switch (msg.type) {
-                    case 'hello':
-                        if (isHost) {
-                            const newPeerId = msg.peerId;
-                            if (!knownPeers.includes(newPeerId)) {
-                                knownPeers.push(newPeerId);
-                                broadcast({ type: 'peer-joined', peerId: newPeerId });
-                                // 连接新成员（房主主动连接新成员，但新成员已经在连接中，可忽略）
-                                // 发送现有成员列表给新成员
-                                const newConn = conns[newPeerId];
-                                if (newConn) newConn.send(JSON.stringify({ type: 'peers-list', peers: knownPeers.filter(p => p !== newPeerId) }));
+            function generateRoomId() {
+                let result = '';
+                for (let i = 0; i < ROOM_ID_LENGTH; i++) result += ROOM_CHARS[Math.floor(Math.random() * ROOM_CHARS.length)];
+                return result;
+            }
+            function formatSize(bytes) {
+                if (bytes === 0) return '0 B';
+                const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(1024));
+                return (bytes / Math.pow(1024, i)).toFixed(i >= 2 ? 2 : 1) + ' ' + units[i];
+            }
+            function formatSpeed(bytesPerSec) {
+                if (bytesPerSec < 1024) return bytesPerSec.toFixed(0) + ' B/s';
+                if (bytesPerSec < 1024 * 1024) return (bytesPerSec / 1024).toFixed(1) + ' KB/s';
+                return (bytesPerSec / (1024 * 1024)).toFixed(2) + ' MB/s';
+            }
+            function showAlert(message, type = 'info') {
+                globalAlert.className = 'alert alert-' + type + ' fade-in';
+                globalAlert.textContent = message;
+                globalAlert.classList.remove('hidden');
+                clearTimeout(globalAlert._timeout);
+                globalAlert._timeout = setTimeout(() => globalAlert.classList.add('hidden'), 4000);
+            }
+            function hideAllScreens() { [screenIdle, screenJoin, screenRoom].forEach(s => s.classList.add('hidden')); }
+            function showScreen(screen) {
+                hideAllScreens();
+                screen.classList.remove('hidden');
+                screen.classList.add('fade-in');
+            }
+            function cleanupPeer() {
+                if (peer) { try { peer.destroy(); } catch (e) {} peer = null; }
+                conns = {};
+                myPeerId = null;
+                roomId = '';
+                isHost = false;
+                sharedFiles = [];
+                selectedFiles = [];
+                transferComplete = false;
+                knownPeers = [];
+                receivingFiles = {};
+                totalBytesSent = 0;
+                totalBytesToSend = 0;
+                totalBytesReceived = 0;
+                totalBytesToReceive = 0;
+            }
+            function resetAll() {
+                cleanupPeer();
+                appState = 'idle';
+                fileInput.value = '';
+                sharedFileList.innerHTML = '';
+                sendProgress.classList.add('hidden');
+                sendProgressBar.style.width = '0%';
+                sendProgressLabel.textContent = '';
+                globalAlert.classList.add('hidden');
+                roomCodeInput.value = '';
+                btnCopyRoom.classList.remove('copied');
+                currentSendStatus = null;
+                showScreen(screenIdle);
+                applyLanguage();
+            }
+
+            function setupConnection(conn) {
+                const peerId = conn.peer;
+                conns[peerId] = conn;
+                conn.on('open', () => {
+                    if (isHost && !knownPeers.includes(peerId)) {
+                        knownPeers.push(peerId);
+                        broadcast({ type: 'peer-joined', peerId: peerId });
+                        conn.send(JSON.stringify({ type: 'peers-list', peers: knownPeers.filter(p => p !== peerId) }));
+                    }
+                    if (!isHost && peerId === roomId) {
+                        conn.send(JSON.stringify({ type: 'hello', peerId: myPeerId }));
+                    }
+                    updateSendStatus('connected', 'connected_can_send');
+                });
+                conn.on('data', handleData);
+                conn.on('close', () => {
+                    delete conns[peerId];
+                    if (isHost) {
+                        const idx = knownPeers.indexOf(peerId);
+                        if (idx > -1) knownPeers.splice(idx, 1);
+                        broadcast({ type: 'peer-left', peerId: peerId });
+                    }
+                });
+                conn.on('error', () => showAlert(t('data_error'), 'error'));
+            }
+
+            function handleData(data) {
+                if (typeof data === 'string') {
+                    const msg = JSON.parse(data);
+                    switch (msg.type) {
+                        case 'hello':
+                            if (isHost) {
+                                const newPeerId = msg.peerId;
+                                if (!knownPeers.includes(newPeerId)) {
+                                    knownPeers.push(newPeerId);
+                                    broadcast({ type: 'peer-joined', peerId: newPeerId });
+                                    const newConn = conns[newPeerId];
+                                    if (newConn) newConn.send(JSON.stringify({ type: 'peers-list', peers: knownPeers.filter(p => p !== newPeerId) }));
+                                }
                             }
-                        }
-                        break;
-                    case 'peers-list':
-                        // 加入者收到成员列表，连接所有成员
-                        msg.peers.forEach(peerId => {
-                            if (peerId !== myPeerId && !conns[peerId]) {
-                                const newConn = peer.connect(peerId, { reliable: true, serialization: 'binary' });
+                            break;
+                        case 'peers-list':
+                            msg.peers.forEach(peerId => {
+                                if (peerId !== myPeerId && !conns[peerId]) {
+                                    const newConn = peer.connect(peerId, { reliable: true, serialization: 'binary' });
+                                    setupConnection(newConn);
+                                }
+                            });
+                            break;
+                        case 'peer-joined':
+                            const newPeerId = msg.peerId;
+                            if (newPeerId !== myPeerId && !conns[newPeerId]) {
+                                const newConn = peer.connect(newPeerId, { reliable: true, serialization: 'binary' });
                                 setupConnection(newConn);
                             }
-                        });
-                        break;
-                    case 'peer-joined':
-                        // 其他成员收到新成员通知，连接新成员
-                        const newPeerId = msg.peerId;
-                        if (newPeerId !== myPeerId && !conns[newPeerId]) {
-                            const newConn = peer.connect(newPeerId, { reliable: true, serialization: 'binary' });
-                            setupConnection(newConn);
-                        }
-                        break;
-                    case 'peer-left':
-                        const leftPeerId = msg.peerId;
-                        if (conns[leftPeerId]) {
-                            conns[leftPeerId].close();
-                            delete conns[leftPeerId];
-                        }
-                        // 移除共享文件中该成员发送的文件？简化处理，不删除
-                        break;
-                    case 'file-meta':
-                        handleFileMeta(msg);
-                        break;
-                    case 'file-complete':
-                        // 忽略，二进制数据完成后会触发组装
-                        break;
-                    case 'delete-file':
-                        deleteSharedFile(msg.fileId);
-                        break;
-                    case 'file-chunk':
-                        // 不应该以字符串接收二进制
-                        break;
-                }
-            } else if (data instanceof ArrayBuffer) {
-                handleFileChunkBinary(data);
-            }
-        }
-
-        // ============ 文件传输 ============
-        let receivingFiles = {}; // {fileId: {chunks: [], totalChunks, meta, receivedChunks}}
-
-        function handleFileMeta(meta) {
-            const fileId = meta.fileId;
-            if (!receivingFiles[fileId]) {
-                receivingFiles[fileId] = {
-                    chunks: new Array(meta.totalChunks),
-                    totalChunks: meta.totalChunks,
-                    name: meta.name,
-                    size: meta.size,
-                    senderId: meta.senderId,
-                    senderName: meta.senderName || meta.senderId,
-                    receivedChunks: 0,
-                };
-            }
-            updateReceiveProgress(0);
-        }
-
-        function handleFileChunkBinary(arrayBuffer) {
-            const view = new DataView(arrayBuffer);
-            if (arrayBuffer.byteLength < 21) return;
-            const msgType = view.getUint8(0);
-            if (msgType !== 1) return;
-            const fileIdBytes = new Uint8Array(arrayBuffer, 1, 16);
-            const fileId = new TextDecoder().decode(fileIdBytes);
-            const chunkIndex = view.getUint32(17, false);
-            const totalChunks = view.getUint32(21, false);
-            const chunkData = new Uint8Array(arrayBuffer, 25);
-
-            if (!receivingFiles[fileId]) return;
-            const rf = receivingFiles[fileId];
-            if (rf.totalChunks < totalChunks) {
-                const newChunks = new Array(totalChunks);
-                for (let i = 0; i < rf.chunks.length; i++) newChunks[i] = rf.chunks[i];
-                rf.chunks = newChunks;
-                rf.totalChunks = totalChunks;
-            }
-            if (!rf.chunks[chunkIndex]) {
-                rf.chunks[chunkIndex] = chunkData;
-                rf.receivedChunks++;
-                totalBytesReceived += chunkData.byteLength;
-                const now = Date.now();
-                const elapsed = (now - lastSpeedUpdate) / 1000;
-                bytesSinceLastUpdate += chunkData.byteLength;
-                if (elapsed >= 1.0) {
-                    receiveSpeed.textContent = formatSpeed(bytesSinceLastUpdate / elapsed);
-                    bytesSinceLastUpdate = 0;
-                    lastSpeedUpdate = now;
-                }
-                updateReceiveProgress(Math.round((totalBytesReceived / totalBytesToReceive) * 100));
-                if (rf.receivedChunks >= rf.totalChunks) {
-                    assembleFile(fileId);
+                            break;
+                        case 'peer-left':
+                            const leftPeerId = msg.peerId;
+                            if (conns[leftPeerId]) {
+                                conns[leftPeerId].close();
+                                delete conns[leftPeerId];
+                            }
+                            break;
+                        case 'file-meta':
+                            handleFileMeta(msg);
+                            break;
+                        case 'delete-file':
+                            deleteSharedFile(msg.fileId);
+                            break;
+                    }
+                } else if (data instanceof ArrayBuffer) {
+                    handleFileChunkBinary(data);
                 }
             }
-        }
 
-        function assembleFile(fileId) {
-            const rf = receivingFiles[fileId];
-            if (!rf || rf._assembled) return;
-            rf._assembled = true;
-            const totalLength = rf.chunks.reduce((sum, chunk) => sum + (chunk ? chunk.byteLength : 0), 0);
-            const assembled = new Uint8Array(totalLength);
-            let offset = 0;
-            for (let i = 0; i < rf.totalChunks; i++) {
-                if (rf.chunks[i]) { assembled.set(rf.chunks[i], offset); offset += rf.chunks[i].byteLength; }
+            function handleFileMeta(meta) {
+                const fileId = meta.fileId;
+                if (!receivingFiles[fileId]) {
+                    receivingFiles[fileId] = {
+                        chunks: new Array(meta.totalChunks),
+                        totalChunks: meta.totalChunks,
+                        name: meta.name,
+                        size: meta.size,
+                        senderId: meta.senderId,
+                        senderName: meta.senderName || meta.senderId,
+                        receivedChunks: 0,
+                    };
+                }
             }
-            const blob = new Blob([assembled]);
-            const url = URL.createObjectURL(blob);
-            sharedFiles.push({
-                id: fileId,
-                name: rf.name,
-                size: totalLength,
-                senderId: rf.senderId,
-                senderName: rf.senderName,
-                url: url,
-            });
-            delete receivingFiles[fileId];
-            renderSharedFiles();
-            autoDownload(url, rf.name);
-        }
 
-        function deleteSharedFile(fileId) {
-            const idx = sharedFiles.findIndex(f => f.id === fileId);
-            if (idx > -1) {
-                URL.revokeObjectURL(sharedFiles[idx].url);
-                sharedFiles.splice(idx, 1);
+            function handleFileChunkBinary(arrayBuffer) {
+                const view = new DataView(arrayBuffer);
+                if (arrayBuffer.byteLength < 21) return;
+                const msgType = view.getUint8(0);
+                if (msgType !== 1) return;
+                const fileIdBytes = new Uint8Array(arrayBuffer, 1, 16);
+                const fileId = new TextDecoder().decode(fileIdBytes);
+                const chunkIndex = view.getUint32(17, false);
+                const totalChunks = view.getUint32(21, false);
+                const chunkData = new Uint8Array(arrayBuffer, 25);
+                if (!receivingFiles[fileId]) return;
+                const rf = receivingFiles[fileId];
+                if (rf.totalChunks < totalChunks) {
+                    const newChunks = new Array(totalChunks);
+                    for (let i = 0; i < rf.chunks.length; i++) newChunks[i] = rf.chunks[i];
+                    rf.chunks = newChunks;
+                    rf.totalChunks = totalChunks;
+                }
+                if (!rf.chunks[chunkIndex]) {
+                    rf.chunks[chunkIndex] = chunkData;
+                    rf.receivedChunks++;
+                    totalBytesReceived += chunkData.byteLength;
+                    if (rf.receivedChunks >= rf.totalChunks) {
+                        assembleFile(fileId);
+                    }
+                }
+            }
+
+            function assembleFile(fileId) {
+                const rf = receivingFiles[fileId];
+                if (!rf || rf._assembled) return;
+                rf._assembled = true;
+                const totalLength = rf.chunks.reduce((sum, chunk) => sum + (chunk ? chunk.byteLength : 0), 0);
+                const assembled = new Uint8Array(totalLength);
+                let offset = 0;
+                for (let i = 0; i < rf.totalChunks; i++) {
+                    if (rf.chunks[i]) { assembled.set(rf.chunks[i], offset); offset += rf.chunks[i].byteLength; }
+                }
+                const blob = new Blob([assembled]);
+                const url = URL.createObjectURL(blob);
+                sharedFiles.push({
+                    id: fileId,
+                    name: rf.name,
+                    size: totalLength,
+                    senderId: rf.senderId,
+                    senderName: rf.senderName,
+                    url: url,
+                });
+                delete receivingFiles[fileId];
                 renderSharedFiles();
+                autoDownload(url, rf.name);
             }
-        }
 
-        function broadcast(msg) {
-            const json = JSON.stringify(msg);
-            Object.values(conns).forEach(conn => {
-                if (conn.open) conn.send(json);
+            function deleteSharedFile(fileId) {
+                const idx = sharedFiles.findIndex(f => f.id === fileId);
+                if (idx > -1) {
+                    URL.revokeObjectURL(sharedFiles[idx].url);
+                    sharedFiles.splice(idx, 1);
+                    renderSharedFiles();
+                }
+            }
+
+            function broadcast(msg) {
+                const json = JSON.stringify(msg);
+                Object.values(conns).forEach(conn => {
+                    if (conn.open) conn.send(json);
+                });
+            }
+
+            function sendFileMeta(fileId, meta) {
+                broadcast({ type: 'file-meta', fileId, ...meta });
+            }
+
+            function sendFileChunk(fileId, chunkIndex, totalChunks, chunkData) {
+                const idBytes = new TextEncoder().encode(fileId);
+                const buffer = new ArrayBuffer(1 + 16 + 4 + 4 + chunkData.byteLength);
+                const view = new DataView(buffer);
+                view.setUint8(0, 1);
+                new Uint8Array(buffer, 1, 16).set(idBytes);
+                view.setUint32(17, chunkIndex, false);
+                view.setUint32(21, totalChunks, false);
+                new Uint8Array(buffer, 25).set(chunkData);
+                Object.values(conns).forEach(conn => {
+                    if (conn.open) {
+                        conn.send(buffer);
+                        totalBytesSent += chunkData.byteLength;
+                    }
+                });
+            }
+
+            function startSendingFiles() {
+                if (!selectedFiles.length) return;
+                const totalConnections = Object.keys(conns).length;
+                if (totalConnections === 0) {
+                    showAlert('没有连接的成员', 'warning');
+                    return;
+                }
+                totalBytesToSend = selectedFiles.reduce((sum, f) => sum + f.size, 0) * totalConnections;
+                totalBytesSent = 0;
+                lastSpeedUpdate = Date.now();
+                bytesSinceLastUpdate = 0;
+                updateSendStatus('transferring', 'sending_files');
+                sendProgress.classList.remove('hidden');
+                sendProgressBar.style.width = '0%';
+                sendProgressLabel.textContent = '';
+                selectedFiles.forEach((file, index) => {
+                    const fileId = myPeerId + '_' + file.name + '_' + Date.now() + '_' + index;
+                    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+                    const meta = {
+                        name: file.name,
+                        size: file.size,
+                        totalChunks,
+                        senderId: myPeerId,
+                        senderName: myPeerId,
+                    };
+                    sendFileMeta(fileId, meta);
+                    let chunkIndex = 0;
+                    const reader = new FileReader();
+                    function readNext() {
+                        if (chunkIndex >= totalChunks) {
+                            if (index === selectedFiles.length - 1) {
+                                transferComplete = true;
+                                updateSendStatus('complete', 'send_complete');
+                                sendProgressBar.style.width = '100%';
+                                sendProgressLabel.textContent = t('send_complete');
+                                showAlert(t('all_sent'), 'success');
+                            }
+                            return;
+                        }
+                        const start = chunkIndex * CHUNK_SIZE;
+                        const end = Math.min(start + CHUNK_SIZE, file.size);
+                        reader.readAsArrayBuffer(file.slice(start, end));
+                    }
+                    reader.onload = function(e) {
+                        const chunkData = new Uint8Array(e.target.result);
+                        sendFileChunk(fileId, chunkIndex, totalChunks, chunkData);
+                        chunkIndex++;
+                        const now = Date.now();
+                        const elapsed = (now - lastSpeedUpdate) / 1000;
+                        bytesSinceLastUpdate += chunkData.byteLength;
+                        if (elapsed >= 1.0) {
+                            sendProgressLabel.textContent = t('sending_progress', { percent: Math.round((totalBytesSent / totalBytesToSend) * 100) });
+                            bytesSinceLastUpdate = 0;
+                            lastSpeedUpdate = now;
+                        }
+                        if (chunkIndex % 20 === 0) setTimeout(readNext, 5);
+                        else readNext();
+                    };
+                    reader.onerror = () => { showAlert(t('read_error'), 'error'); };
+                    readNext();
+                });
+            }
+
+            function updateSendStatus(status, key, vars) {
+                currentSendStatus = { status, key, vars };
+                const map = {
+                    connecting: ['connecting', 'status-connecting'],
+                    connected: ['connected', 'status-connected'],
+                    transferring: ['transferring', 'status-transferring'],
+                    complete: ['connected', 'status-complete'],
+                    error: ['', 'status-error']
+                };
+                const [dot, badge] = map[status] || ['connecting', 'status-connecting'];
+                sendStatus.innerHTML = `<span class="status-badge ${badge}">${dot ? `<span class="status-dot"></span>` : ''} ${t(key, vars)}</span>`;
+            }
+
+            function renderSharedFiles() {
+                sharedFileList.innerHTML = '';
+                if (sharedFiles.length === 0) {
+                    sharedFileList.innerHTML = `<li style="justify-content:center;color:#5a5a7a;">${t('waiting_for_files_short')}</li>`;
+                    return;
+                }
+                sharedFiles.forEach(file => {
+                    const li = document.createElement('li');
+                    const icon = getFileIcon(file.name);
+                    li.innerHTML = `
+                        <span class="file-icon">${icon}</span>
+                        <div class="file-name">${escapeHtml(file.name)}</div>
+                        <div class="file-size">${formatSize(file.size)} · ${t('file_owner')}: ${file.senderName}</div>
+                        <button class="btn btn-secondary btn-sm" onclick="downloadFile('${file.url}', '${escapeHtml(file.name)}')">${t('download')}</button>
+                        ${isHost ? `<button class="btn btn-danger btn-sm" onclick="deleteFile('${file.id}')">${t('delete')}</button>` : ''}
+                    `;
+                    sharedFileList.appendChild(li);
+                });
+            }
+            function getFileIcon(filename) {
+                const ext = filename.split('.').pop().toLowerCase();
+                const icons = { jpg:'🖼️', jpeg:'🖼️', png:'🖼️', gif:'🖼️', webp:'🖼️', svg:'🖼️', bmp:'🖼️', mp4:'🎬', mov:'🎬', avi:'🎬', mkv:'🎬', mp3:'🎵', wav:'🎵', flac:'🎵', aac:'🎵', pdf:'📕', doc:'📝', docx:'📝', xls:'📊', xlsx:'📊', ppt:'📽️', pptx:'📽️', zip:'📦', rar:'📦', '7z':'📦', tar:'📦', gz:'📦', txt:'📄', json:'📄', csv:'📄', html:'🌐', css:'🎨', js:'⚙️', py:'🐍', exe:'💻', apk:'📱', dmg:'💿' };
+                return icons[ext] || '📎';
+            }
+            function escapeHtml(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+            window.downloadFile = function(url, filename) {
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => document.body.removeChild(a), 100);
+            };
+            window.deleteFile = function(fileId) {
+                if (!isHost) return;
+                broadcast({ type: 'delete-file', fileId });
+                deleteSharedFile(fileId);
+            };
+
+            function createRoom() {
+                resetAll();
+                isHost = true;
+                roomId = generateRoomId();
+                myPeerId = roomId;
+                appState = 'room';
+                showScreen(screenRoom);
+                roomInfoLabel.textContent = t('room_number');
+                roomCodeDisplay.textContent = roomId;
+                knownPeers = [];
+                initPeer(roomId);
+                updateSendStatus('connecting', 'waiting_for_peer');
+            }
+            function showJoinScreen() {
+                resetAll();
+                appState = 'joining';
+                showScreen(screenJoin);
+                roomCodeInput.value = '';
+                roomCodeInput.focus();
+                applyLanguage();
+            }
+            function goBackToIdle() { resetAll(); }
+            function joinRoom() {
+                const inputCode = roomCodeInput.value.trim().toUpperCase();
+                if (!inputCode || inputCode.length < 3) { showAlert(t('room_not_found'), 'warning'); return; }
+                roomId = inputCode;
+                isHost = false;
+                appState = 'room';
+                showScreen(screenRoom);
+                roomInfoLabel.textContent = t('connected_to_room');
+                roomCodeDisplay.textContent = roomId;
+                updateSendStatus('connecting', 'connecting_room');
+                cleanupPeer();
+                peer = new Peer({ host: PEER_SERVER.host, port: PEER_SERVER.port, secure: PEER_SERVER.secure, debug: 0 });
+                peer.on('open', (id) => {
+                    myPeerId = id;
+                    const conn = peer.connect(roomId, { reliable: true, serialization: 'binary' });
+                    setupConnection(conn);
+                });
+                peer.on('error', (err) => {
+                    if (err.type === 'peer-unavailable') { showAlert(t('room_not_found'), 'error'); updateSendStatus('error', 'join_status_error'); }
+                    else if (err.type === 'network' || err.type === 'server-error') showAlert(t('network_error'), 'error');
+                });
+                peer.on('disconnected', () => { if (!transferComplete && peer && !peer.destroyed) peer.reconnect(); });
+            }
+            function initPeer(peerId) {
+                cleanupPeer();
+                peer = new Peer(peerId, { host: PEER_SERVER.host, port: PEER_SERVER.port, secure: PEER_SERVER.secure, debug: 0 });
+                peer.on('open', (id) => { myPeerId = id; });
+                peer.on('connection', (conn) => { setupConnection(conn); });
+                peer.on('error', (err) => {
+                    if (err.type === 'unavailable-id') {
+                        roomId = generateRoomId();
+                        roomCodeDisplay.textContent = roomId;
+                        initPeer(roomId);
+                        showAlert(t('room_conflict'), 'warning');
+                    } else if (err.type === 'peer-unavailable') { showAlert(t('room_not_found'), 'error'); }
+                    else if (err.type === 'network' || err.type === 'server-error') showAlert(t('network_error'), 'error');
+                });
+                peer.on('disconnected', () => { if (!transferComplete && peer && !peer.destroyed) peer.reconnect(); });
+            }
+
+            document.getElementById('btnCreate').addEventListener('click', createRoom);
+            document.getElementById('btnJoin').addEventListener('click', showJoinScreen);
+            document.getElementById('btnBack').addEventListener('click', goBackToIdle);
+            document.getElementById('btnJoinConfirm').addEventListener('click', joinRoom);
+            document.getElementById('btnRestart').addEventListener('click', resetAll);
+            document.getElementById('btnCopyRoom').addEventListener('click', copyRoomCode);
+            document.getElementById('btnShareLink').addEventListener('click', shareRoomLink);
+            fileInput.addEventListener('change', function() { handleFileSelection(Array.from(this.files)); });
+            dropZone.addEventListener('dragover', function(e) { e.preventDefault(); this.classList.add('drag-over'); });
+            dropZone.addEventListener('dragleave', function(e) { e.preventDefault(); this.classList.remove('drag-over'); });
+            dropZone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('drag-over');
+                if (e.dataTransfer.files.length > 0) handleFileSelection(Array.from(e.dataTransfer.files));
             });
+            function handleFileSelection(files) {
+                if (appState !== 'room') return;
+                selectedFiles = files;
+                if (selectedFiles.length > 0 && Object.keys(conns).length > 0) startSendingFiles();
+                else if (selectedFiles.length > 0) showAlert('尚无成员连接', 'warning');
+            }
+            function copyRoomCode() {
+                if (!roomId) return;
+                navigator.clipboard.writeText(roomId).then(() => {
+                    btnCopyRoom.classList.add('copied');
+                    setTimeout(() => btnCopyRoom.classList.remove('copied'), 1800);
+                }).catch(() => {
+                    const input = document.createElement('input');
+                    input.value = roomId;
+                    document.body.appendChild(input);
+                    input.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(input);
+                    btnCopyRoom.classList.add('copied');
+                    setTimeout(() => btnCopyRoom.classList.remove('copied'), 1800);
+                });
+            }
+            function shareRoomLink() {
+                const link = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
+                navigator.clipboard.writeText(link).then(() => showAlert(t('copy_success'), 'success')).catch(() => {
+                    const input = document.createElement('input');
+                    input.value = link;
+                    document.body.appendChild(input);
+                    input.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(input);
+                    showAlert(t('link_copied'), 'success');
+                });
+            }
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && appState === 'joining' && roomCodeInput.value.trim().length >= 3) joinRoom();
+            });
+            window.addEventListener('beforeunload', cleanupPeer);
+
+            const aiToggleBtn = document.getElementById('aiToggleBtn');
+            const aiWindow = document.getElementById('aiWindow');
+            const aiMessages = document.getElementById('aiMessages');
+            const aiInput = document.getElementById('aiInput');
+            const aiSendBtn = document.getElementById('aiSendBtn');
+            aiToggleBtn.addEventListener('click', () => {
+                aiWindow.style.display = aiWindow.style.display === 'block' ? 'none' : 'block';
+            });
+            function addMessage(text, sender) {
+                const msgDiv = document.createElement('div');
+                msgDiv.className = `message ${sender}`;
+                msgDiv.textContent = text;
+                aiMessages.appendChild(msgDiv);
+                aiMessages.scrollTop = aiMessages.scrollHeight;
+            }
+            function getAIResponse(question) {
+                const q = question.toLowerCase();
+                if (q.includes('创建') || q.includes('create')) return '点击“创建房间”按钮，系统会生成一个房间号，分享给其他人即可加入。';
+                if (q.includes('加入') || q.includes('join')) return '点击“加入房间”按钮，输入房间号即可加入。';
+                if (q.includes('文件') && q.includes('发送')) return '在房间界面，点击或拖拽文件到上传区域，文件会自动发送给房间内所有人。';
+                if (q.includes('删除') || q.includes('管理')) return '只有房主（创建房间的人）可以删除共享文件，点击文件旁边的“删除”按钮即可。';
+                if (q.includes('语言') || q.includes('language')) return '右上角下拉菜单可以切换界面语言。';
+                if (q.includes('深色') || q.includes('主题') || q.includes('dark')) return '点击右上角月亮/太阳图标可以切换深色/浅色模式。';
+                if (q.includes('安全') || q.includes('隐私')) return '文件通过点对点加密传输，不经过服务器，确保隐私安全。';
+                if (q.includes('多人') || q.includes('人数')) return '支持多人同时在线传输，但房主可以管理共享文件。';
+                return '抱歉，我暂时无法理解这个问题。您可以问我关于创建房间、加入房间、发送文件、删除文件等问题。';
+            }
+            aiSendBtn.addEventListener('click', () => {
+                const question = aiInput.value.trim();
+                if (!question) return;
+                addMessage(question, 'user');
+                aiInput.value = '';
+                setTimeout(() => {
+                    addMessage(getAIResponse(question), 'assistant');
+                }, 300);
+            });
+            aiInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') aiSendBtn.click();
+            });
+
+            applyLanguage();
+            showScreen(screenIdle);
         }
 
-        function sendFileMeta(fileId, meta) {
-            broadcast({ type: 'file-meta', fileId, ...meta });
-        }
+        // ========== 降级模式代码（含多语言） ==========
+        function initLegacy() {
+            if (legacyInitialized) return;
+            legacyInitialized = true;
 
-        function sendFileChunk(fileId, chunkIndex, totalChunks, chunkData) {
-            const idBytes = new TextEncoder().encode(fileId);
-            const buffer = new ArrayBuffer(1 + 16 + 4 + 4 + chunkData.byteLength);
-            const view = new DataView(buffer);
-            view.setUint8(0, 1);
-            new Uint8Array(buffer, 1, 16).set(idBytes);
-            view.setUint32(17, chunkIndex, false);
-            view.setUint32(21, totalChunks, false);
-            new Uint8Array(buffer, 25).set(chunkData);
-            Object.values(conns).forEach(conn => {
-                if (conn.open) {
-                    conn.send(buffer);
-                    totalBytesSent += chunkData.byteLength;
+            var legacyTranslations = {
+                'zh-CN': {
+                    title: '📁 P2P 文件传输（兼容版）',
+                    subtitle: '适用于较旧浏览器，仅支持双人传输。',
+                    create: '✨ 创建房间',
+                    join: '🔗 加入房间',
+                    room_code_placeholder: '输入房间号',
+                    join_confirm: '加入',
+                    back: '← 返回',
+                    room_code_label: '房间号',
+                    copy_code: '📋 复制房间号',
+                    drop_hint: '点击或拖拽文件到此处发送',
+                    waiting_connection: '等待连接...',
+                    waiting_receive: '等待接收...',
+                    restart: '重新开始',
+                    connected: '已连接，可以发送文件',
+                    wait_peer: '等待对方连接...',
+                    wait_files: '等待接收文件...',
+                    sending_start: '开始发送',
+                    sending_progress: '发送中 {percent}%',
+                    send_complete: '发送完成',
+                    receive_file: '接收文件: {name}',
+                    receive_complete: '文件接收完成',
+                    connection_closed: '连接已关闭',
+                    transfer_error: '传输错误',
+                    read_error: '读取文件失败',
+                    room_not_found: '房间不存在或无法连接',
+                    copy_success: '已复制房间号'
+                },
+                'zh-TW': {
+                    title: '📁 P2P 檔案傳輸（兼容版）',
+                    subtitle: '適用於較舊瀏覽器，僅支援雙人傳輸。',
+                    create: '✨ 建立房間',
+                    join: '🔗 加入房間',
+                    room_code_placeholder: '輸入房間號',
+                    join_confirm: '加入',
+                    back: '← 返回',
+                    room_code_label: '房間號',
+                    copy_code: '📋 複製房間號',
+                    drop_hint: '點擊或拖曳檔案到此處傳送',
+                    waiting_connection: '等待連線...',
+                    waiting_receive: '等待接收...',
+                    restart: '重新開始',
+                    connected: '已連線，可以傳送檔案',
+                    wait_peer: '等待對方連線...',
+                    wait_files: '等待接收檔案...',
+                    sending_start: '開始傳送',
+                    sending_progress: '傳送中 {percent}%',
+                    send_complete: '傳送完成',
+                    receive_file: '接收檔案: {name}',
+                    receive_complete: '檔案接收完成',
+                    connection_closed: '連線已關閉',
+                    transfer_error: '傳輸錯誤',
+                    read_error: '讀取檔案失敗',
+                    room_not_found: '房間不存在或無法連線',
+                    copy_success: '已複製房間號'
+                },
+                'en': {
+                    title: '📁 P2P File Transfer (Compatible)',
+                    subtitle: 'Suitable for older browsers, supports two-person transfer only.',
+                    create: '✨ Create Room',
+                    join: '🔗 Join Room',
+                    room_code_placeholder: 'Enter room code',
+                    join_confirm: 'Join',
+                    back: '← Back',
+                    room_code_label: 'Room Code',
+                    copy_code: '📋 Copy Room Code',
+                    drop_hint: 'Click or drag files here to send',
+                    waiting_connection: 'Waiting for connection...',
+                    waiting_receive: 'Waiting for files...',
+                    restart: 'Restart',
+                    connected: 'Connected, ready to send',
+                    wait_peer: 'Waiting for peer...',
+                    wait_files: 'Waiting for files...',
+                    sending_start: 'Sending started',
+                    sending_progress: 'Sending {percent}%',
+                    send_complete: 'Send complete',
+                    receive_file: 'Receiving file: {name}',
+                    receive_complete: 'File received',
+                    connection_closed: 'Connection closed',
+                    transfer_error: 'Transfer error',
+                    read_error: 'Failed to read file',
+                    room_not_found: 'Room not found or cannot connect',
+                    copy_success: 'Room code copied'
+                },
+                'ja': {
+                    title: '📁 P2P ファイル転送（互換版）',
+                    subtitle: '古いブラウザ向け、2人だけの転送に対応。',
+                    create: '✨ 部屋を作成',
+                    join: '🔗 部屋に参加',
+                    room_code_placeholder: '部屋番号を入力',
+                    join_confirm: '参加',
+                    back: '← 戻る',
+                    room_code_label: '部屋番号',
+                    copy_code: '📋 部屋番号をコピー',
+                    drop_hint: 'ここをクリックまたはドラッグしてファイルを送信',
+                    waiting_connection: '接続待機中...',
+                    waiting_receive: '受信待機中...',
+                    restart: '再開',
+                    connected: '接続済み、送信準備完了',
+                    wait_peer: '相手の接続を待っています...',
+                    wait_files: 'ファイルを待っています...',
+                    sending_start: '送信開始',
+                    sending_progress: '送信中 {percent}%',
+                    send_complete: '送信完了',
+                    receive_file: '受信ファイル: {name}',
+                    receive_complete: 'ファイル受信完了',
+                    connection_closed: '接続が閉じられました',
+                    transfer_error: '転送エラー',
+                    read_error: 'ファイルの読み取りに失敗',
+                    room_not_found: '部屋が見つからないか接続できません',
+                    copy_success: '部屋番号をコピーしました'
+                },
+                'ko': {
+                    title: '📁 P2P 파일 전송 (호환 모드)',
+                    subtitle: '구형 브라우저용, 2인 전송만 지원합니다.',
+                    create: '✨ 방 만들기',
+                    join: '🔗 방 참가',
+                    room_code_placeholder: '방 코드 입력',
+                    join_confirm: '참가',
+                    back: '← 뒤로',
+                    room_code_label: '방 코드',
+                    copy_code: '📋 방 코드 복사',
+                    drop_hint: '파일을 보내려면 여기를 클릭하거나 드래그하세요',
+                    waiting_connection: '연결 대기 중...',
+                    waiting_receive: '수신 대기 중...',
+                    restart: '다시 시작',
+                    connected: '연결됨, 전송 준비 완료',
+                    wait_peer: '상대방을 기다리는 중...',
+                    wait_files: '파일을 기다리는 중...',
+                    sending_start: '전송 시작',
+                    sending_progress: '전송 중 {percent}%',
+                    send_complete: '전송 완료',
+                    receive_file: '파일 수신: {name}',
+                    receive_complete: '파일 수신 완료',
+                    connection_closed: '연결이 닫혔습니다',
+                    transfer_error: '전송 오류',
+                    read_error: '파일 읽기 실패',
+                    room_not_found: '방을 찾을 수 없거나 연결할 수 없습니다',
+                    copy_success: '방 코드가 복사되었습니다'
+                }
+            };
+
+            var currentLegacyLang = localStorage.getItem('legacyLang') || 'zh-CN';
+            var legacyLangSelect = document.getElementById('legacyLangSelect');
+            if (legacyLangSelect) legacyLangSelect.value = currentLegacyLang;
+
+            function legacyT(key, vars) {
+                var text = legacyTranslations[currentLegacyLang][key] || legacyTranslations['zh-CN'][key] || key;
+                if (vars) {
+                    for (var v in vars) {
+                        text = text.replace('{' + v + '}', vars[v]);
+                    }
+                }
+                return text;
+            }
+
+            function applyLegacyLanguage() {
+                document.querySelectorAll('[data-legacy-i18n]').forEach(function(el) {
+                    var key = el.getAttribute('data-legacy-i18n');
+                    if (key === 'subtitle' || key === 'title') {
+                        el.innerHTML = legacyT(key);
+                    } else {
+                        el.textContent = legacyT(key);
+                    }
+                });
+                document.querySelectorAll('[data-legacy-i18n-placeholder]').forEach(function(el) {
+                    el.setAttribute('placeholder', legacyT(el.getAttribute('data-legacy-i18n-placeholder')));
+                });
+                if (currentState === 'idle') {
+                    legacySendStatus.textContent = legacyT('waiting_connection');
+                    legacyReceiveStatus.textContent = legacyT('waiting_receive');
+                } else if (currentState === 'room') {
+                    if (conn && conn.open) {
+                        legacySendStatus.textContent = legacyT('connected');
+                        legacyReceiveStatus.textContent = legacyT('wait_files');
+                    } else {
+                        legacySendStatus.textContent = legacyT('wait_peer');
+                        legacyReceiveStatus.textContent = legacyT('waiting_receive');
+                    }
+                }
+            }
+
+            if (legacyLangSelect) {
+                legacyLangSelect.addEventListener('change', function() {
+                    currentLegacyLang = this.value;
+                    localStorage.setItem('legacyLang', currentLegacyLang);
+                    applyLegacyLanguage();
+                });
+            }
+
+            var peer = null;
+            var conn = null;
+            var roomId = '';
+            var isCreator = false;
+            var selectedFiles = [];
+            var currentState = 'idle';
+
+            var legacyScreenIdle = document.getElementById('legacyScreenIdle');
+            var legacyScreenJoin = document.getElementById('legacyScreenJoin');
+            var legacyScreenRoom = document.getElementById('legacyScreenRoom');
+            var legacyRoomCodeDisplay = document.getElementById('legacyRoomCodeDisplay');
+            var legacyRoomCodeInput = document.getElementById('legacyRoomCodeInput');
+            var legacyFileInput = document.getElementById('legacyFileInput');
+            var legacyDropZone = document.getElementById('legacyDropZone');
+            var legacySendStatus = document.getElementById('legacySendStatus');
+            var legacyReceiveStatus = document.getElementById('legacyReceiveStatus');
+            var legacyBtnCreate = document.getElementById('legacyBtnCreate');
+            var legacyBtnJoin = document.getElementById('legacyBtnJoin');
+            var legacyBtnBack = document.getElementById('legacyBtnBack');
+            var legacyBtnJoinConfirm = document.getElementById('legacyBtnJoinConfirm');
+            var legacyBtnCopyRoom = document.getElementById('legacyBtnCopyRoom');
+            var legacyBtnRestart = document.getElementById('legacyBtnRestart');
+
+            function showScreen(screen) {
+                legacyScreenIdle.classList.add('hidden');
+                legacyScreenJoin.classList.add('hidden');
+                legacyScreenRoom.classList.add('hidden');
+                screen.classList.remove('hidden');
+            }
+            function resetLegacy() {
+                if (conn) { try { conn.close(); } catch(e) {} conn = null; }
+                if (peer) { try { peer.destroy(); } catch(e) {} peer = null; }
+                roomId = '';
+                isCreator = false;
+                selectedFiles = [];
+                currentState = 'idle';
+                legacyFileInput.value = '';
+                legacySendStatus.textContent = legacyT('waiting_connection');
+                legacyReceiveStatus.textContent = legacyT('waiting_receive');
+                showScreen(legacyScreenIdle);
+            }
+            function updateStatus(element, text, type) {
+                var badgeClass = type === 'connected' ? 'status-connected' : type === 'transferring' ? 'status-transferring' : type === 'complete' ? 'status-complete' : type === 'error' ? 'status-error' : 'status-connecting';
+                element.innerHTML = '<span class="status-badge ' + badgeClass + '">' + text + '</span>';
+            }
+            function generateRoomCode() {
+                var chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+                var result = '';
+                for (var i = 0; i < 6; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
+                return result;
+            }
+            function initLegacyPeer(peerId) {
+                if (peer) { try { peer.destroy(); } catch(e) {} }
+                peer = new Peer(peerId, { host: '0.peerjs.com', port: 443, secure: true, debug: 0 });
+                peer.on('open', function(id) {
+                    if (isCreator) updateStatus(legacySendStatus, legacyT('wait_peer'), 'connecting');
+                });
+                peer.on('connection', function(incomingConn) {
+                    if (isCreator && currentState === 'room') {
+                        conn = incomingConn;
+                        setupLegacyConnection();
+                        updateStatus(legacySendStatus, legacyT('connected'), 'connected');
+                    }
+                });
+                peer.on('error', function(err) {
+                    if (err.type === 'unavailable-id') {
+                        roomId = generateRoomCode();
+                        legacyRoomCodeDisplay.textContent = roomId;
+                        initLegacyPeer(roomId);
+                    } else if (err.type === 'peer-unavailable') {
+                        alert(legacyT('room_not_found'));
+                        resetLegacy();
+                    }
+                });
+            }
+            function setupLegacyConnection() {
+                conn.on('open', function() {
+                    currentState = 'room';
+                    updateStatus(legacySendStatus, legacyT('connected'), 'connected');
+                    updateStatus(legacyReceiveStatus, legacyT('wait_files'), 'connected');
+                });
+                conn.on('data', function(data) {
+                    if (typeof data === 'string') {
+                        var msg = JSON.parse(data);
+                        if (msg.type === 'file-meta') {
+                            receivingMeta = msg;
+                            receivingChunks = {};
+                            updateStatus(legacyReceiveStatus, legacyT('receive_file', {name: msg.name}), 'transferring');
+                        }
+                    } else if (data instanceof ArrayBuffer) {
+                        handleLegacyFileChunk(data);
+                    }
+                });
+                conn.on('close', function() {
+                    updateStatus(legacySendStatus, legacyT('connection_closed'), 'error');
+                    updateStatus(legacyReceiveStatus, legacyT('connection_closed'), 'error');
+                });
+                conn.on('error', function() {
+                    updateStatus(legacySendStatus, legacyT('transfer_error'), 'error');
+                    updateStatus(legacyReceiveStatus, legacyT('transfer_error'), 'error');
+                });
+            }
+            var receivingChunks = {};
+            var receivingMeta = null;
+            function handleLegacyFileChunk(arrayBuffer) {
+                var view = new DataView(arrayBuffer);
+                if (arrayBuffer.byteLength < 13) return;
+                var msgType = view.getUint8(0);
+                if (msgType !== 1) return;
+                var chunkIndex = view.getUint32(1, false);
+                var totalChunks = view.getUint32(5, false);
+                var chunkData = new Uint8Array(arrayBuffer, 9);
+                if (!receivingChunks[chunkIndex]) receivingChunks[chunkIndex] = chunkData;
+                if (Object.keys(receivingChunks).length >= totalChunks) {
+                    var totalLength = receivingMeta.size;
+                    var assembled = new Uint8Array(totalLength);
+                    var offset = 0;
+                    for (var i = 0; i < totalChunks; i++) {
+                        if (receivingChunks[i]) {
+                            assembled.set(receivingChunks[i], offset);
+                            offset += receivingChunks[i].byteLength;
+                        }
+                    }
+                    var blob = new Blob([assembled]);
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url;
+                    a.download = receivingMeta.name;
+                    a.click();
+                    updateStatus(legacyReceiveStatus, legacyT('receive_complete'), 'complete');
+                    receivingChunks = {};
+                    receivingMeta = null;
+                }
+            }
+            legacyBtnCreate.addEventListener('click', function() {
+                resetLegacy();
+                roomId = generateRoomCode();
+                isCreator = true;
+                currentState = 'room';
+                showScreen(legacyScreenRoom);
+                legacyRoomCodeDisplay.textContent = roomId;
+                initLegacyPeer(roomId);
+                updateStatus(legacySendStatus, legacyT('wait_peer'), 'connecting');
+                updateStatus(legacyReceiveStatus, legacyT('waiting_receive'), 'connecting');
+            });
+            legacyBtnJoin.addEventListener('click', function() {
+                resetLegacy();
+                currentState = 'joining';
+                showScreen(legacyScreenJoin);
+            });
+            legacyBtnBack.addEventListener('click', resetLegacy);
+            legacyBtnJoinConfirm.addEventListener('click', function() {
+                var code = legacyRoomCodeInput.value.trim().toUpperCase();
+                if (!code) return;
+                roomId = code;
+                isCreator = false;
+                currentState = 'room';
+                showScreen(legacyScreenRoom);
+                legacyRoomCodeDisplay.textContent = roomId;
+                peer = new Peer({ host: '0.peerjs.com', port: 443, secure: true, debug: 0 });
+                peer.on('open', function(id) {
+                    conn = peer.connect(roomId, { reliable: true, serialization: 'binary' });
+                    setupLegacyConnection();
+                });
+                peer.on('error', function(err) {
+                    if (err.type === 'peer-unavailable') {
+                        alert(legacyT('room_not_found'));
+                        resetLegacy();
+                    }
+                });
+            });
+            legacyBtnCopyRoom.addEventListener('click', function() {
+                navigator.clipboard.writeText(roomId).then(function() { alert(legacyT('copy_success')); });
+            });
+            legacyBtnRestart.addEventListener('click', resetLegacy);
+            legacyDropZone.addEventListener('dragover', function(e) { e.preventDefault(); legacyDropZone.classList.add('drag-over'); });
+            legacyDropZone.addEventListener('dragleave', function() { legacyDropZone.classList.remove('drag-over'); });
+            legacyDropZone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                legacyDropZone.classList.remove('drag-over');
+                if (e.dataTransfer.files.length > 0) {
+                    selectedFiles = Array.prototype.slice.call(e.dataTransfer.files);
+                    sendLegacyFiles();
                 }
             });
-        }
-
-        function sendFileComplete(fileId) {
-            broadcast({ type: 'file-complete', fileId });
-        }
-
-        function startSendingFiles() {
-            if (!selectedFiles.length) return;
-            const totalConnections = Object.keys(conns).length;
-            if (totalConnections === 0) {
-                showAlert('没有连接的成员', 'warning');
-                return;
-            }
-            totalBytesToSend = selectedFiles.reduce((sum, f) => sum + f.size, 0) * totalConnections;
-            totalBytesSent = 0;
-            lastSpeedUpdate = Date.now();
-            bytesSinceLastUpdate = 0;
-            updateSendStatus('transferring', 'sending_files');
-            sendProgress.classList.remove('hidden');
-            sendProgressBar.style.width = '0%';
-            sendProgressBar.classList.remove('complete');
-            sendSpeed.textContent = '';
-            selectedFiles.forEach((file, index) => {
-                const fileId = myPeerId + '_' + file.name + '_' + Date.now() + '_' + index;
-                const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-                const meta = {
-                    name: file.name,
-                    size: file.size,
-                    totalChunks,
-                    senderId: myPeerId,
-                    senderName: myPeerId,
-                };
-                sendFileMeta(fileId, meta);
-                // 开始发送文件块
-                let chunkIndex = 0;
-                const reader = new FileReader();
+            legacyFileInput.addEventListener('change', function() {
+                selectedFiles = Array.prototype.slice.call(this.files);
+                sendLegacyFiles();
+            });
+            function sendLegacyFiles() {
+                if (!conn || !selectedFiles.length) return;
+                var file = selectedFiles[0];
+                var totalChunks = Math.ceil(file.size / 65536);
+                var meta = { type: 'file-meta', name: file.name, size: file.size, totalChunks: totalChunks };
+                conn.send(JSON.stringify(meta));
+                var reader = new FileReader();
+                var chunkIndex = 0;
                 function readNext() {
                     if (chunkIndex >= totalChunks) {
-                        sendFileComplete(fileId);
-                        if (index === selectedFiles.length - 1) {
-                            transferComplete = true;
-                            updateSendStatus('complete', 'send_complete');
-                            sendProgressBar.style.width = '100%';
-                            sendProgressBar.classList.add('complete');
-                            sendSpeed.textContent = '';
-                            showAlert(t('all_sent'), 'success');
-                        }
+                        conn.send(JSON.stringify({ type: 'file-complete' }));
+                        updateStatus(legacySendStatus, legacyT('send_complete'), 'complete');
                         return;
                     }
-                    const start = chunkIndex * CHUNK_SIZE;
-                    const end = Math.min(start + CHUNK_SIZE, file.size);
+                    var start = chunkIndex * 65536;
+                    var end = Math.min(start + 65536, file.size);
                     reader.readAsArrayBuffer(file.slice(start, end));
                 }
                 reader.onload = function(e) {
-                    const chunkData = new Uint8Array(e.target.result);
-                    sendFileChunk(fileId, chunkIndex, totalChunks, chunkData);
+                    var chunkData = new Uint8Array(e.target.result);
+                    var buffer = new ArrayBuffer(9 + chunkData.byteLength);
+                    var view = new DataView(buffer);
+                    view.setUint8(0, 1);
+                    view.setUint32(1, chunkIndex, false);
+                    view.setUint32(5, totalChunks, false);
+                    new Uint8Array(buffer, 9).set(chunkData);
+                    conn.send(buffer);
                     chunkIndex++;
-                    const now = Date.now();
-                    const elapsed = (now - lastSpeedUpdate) / 1000;
-                    bytesSinceLastUpdate += chunkData.byteLength;
-                    if (elapsed >= 1.0) {
-                        sendSpeed.textContent = formatSpeed(bytesSinceLastUpdate / elapsed);
-                        bytesSinceLastUpdate = 0;
-                        lastSpeedUpdate = now;
-                    }
-                    updateSendProgress(Math.round((totalBytesSent / totalBytesToSend) * 100));
-                    if (chunkIndex % 20 === 0) setTimeout(readNext, 5);
-                    else readNext();
+                    updateStatus(legacySendStatus, legacyT('sending_progress', {percent: Math.round((chunkIndex / totalChunks) * 100)}), 'transferring');
+                    setTimeout(readNext, 10);
                 };
-                reader.onerror = () => { showAlert(t('read_error'), 'error'); };
+                reader.onerror = function() { updateStatus(legacySendStatus, legacyT('read_error'), 'error'); };
+                updateStatus(legacySendStatus, legacyT('sending_start'), 'transferring');
                 readNext();
-            });
-        }
-
-        // ============ UI 更新 ============
-        function updateSendStatus(status, key, vars) {
-            currentSendStatus = { status, key, vars };
-            const map = {
-                connecting: ['connecting', 'status-connecting'],
-                connected: ['connected', 'status-connected'],
-                transferring: ['transferring', 'status-transferring'],
-                complete: ['connected', 'status-complete'],
-                error: ['', 'status-error']
-            };
-            const [dot, badge] = map[status] || ['connecting', 'status-connecting'];
-            sendStatus.innerHTML = `<span class="status-badge ${badge}">${dot ? `<span class="status-dot ${dot}"></span>` : ''} ${t(key, vars)}</span>`;
-        }
-        function updateSendProgress(percent) {
-            sendProgressBar.style.width = percent + '%';
-            sendProgressLabel.textContent = t('sending_progress', { percent: percent });
-        }
-        function updateReceiveProgress(percent) {
-            receiveProgressBar.style.width = percent + '%';
-            receiveProgressLabel.textContent = t('sending_progress', { percent: percent });
-        }
-        function renderSharedFiles() {
-            sharedFileList.innerHTML = '';
-            if (sharedFiles.length === 0) {
-                sharedFileList.innerHTML = `<li style="justify-content:center;color:var(--text-secondary)">${t('waiting_for_files_short')}</li>`;
-                return;
             }
-            sharedFiles.forEach(file => {
-                const li = document.createElement('li');
-                li.className = 'shared-file-item';
-                const icon = getFileIcon(file.name);
-                li.innerHTML = `
-                    <span class="file-icon">${icon}</span>
-                    <div class="file-info">
-                        <div class="file-name">${escapeHtml(file.name)}</div>
-                        <div class="file-size">${formatSize(file.size)} · ${t('file_owner')}: ${file.senderName}</div>
-                    </div>
-                    <button class="btn-download" onclick="downloadFile('${file.url}', '${escapeHtml(file.name)}')">${t('download')}</button>
-                    ${isHost ? `<button class="btn-danger" onclick="deleteFile('${file.id}')">${t('delete')}</button>` : ''}
-                `;
-                sharedFileList.appendChild(li);
-            });
+            applyLegacyLanguage();
+            showScreen(legacyScreenIdle);
         }
-        function getFileIcon(filename) {
-            const ext = filename.split('.').pop().toLowerCase();
-            const icons = { jpg: '🖼️', jpeg: '🖼️', png: '🖼️', gif: '🖼️', webp: '🖼️', svg: '🖼️', bmp: '🖼️', mp4: '🎬', mov: '🎬', avi: '🎬', mkv: '🎬', mp3: '🎵', wav: '🎵', flac: '🎵', aac: '🎵', pdf: '📕', doc: '📝', docx: '📝', xls: '📊', xlsx: '📊', ppt: '📽️', pptx: '📽️', zip: '📦', rar: '📦', '7z': '📦', tar: '📦', gz: '📦', txt: '📄', json: '📄', csv: '📄', html: '🌐', css: '🎨', js: '⚙️', py: '🐍', exe: '💻', apk: '📱', dmg: '💿' };
-            return icons[ext] || '📎';
-        }
-        function escapeHtml(str) {
-            const div = document.createElement('div');
-            div.textContent = str;
-            return div.innerHTML;
-        }
-        window.downloadFile = function(url, filename) {
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            a.style.display = 'none';
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(() => document.body.removeChild(a), 100);
-        };
-        window.deleteFile = function(fileId) {
-            if (!isHost) return;
-            broadcast({ type: 'delete-file', fileId });
-            deleteSharedFile(fileId);
-        };
-
-        // ============ 创建和加入房间 ============
-        function createRoom() {
-            resetAll();
-            isHost = true;
-            roomId = generateRoomId();
-            myPeerId = roomId;
-            appState = 'room';
-            showScreen(screenRoom);
-            roomInfoLabel.textContent = t('room_number');
-            roomCodeDisplay.textContent = roomId;
-            knownPeers = [];
-            initPeer(roomId);
-            updateSendStatus('connecting', 'waiting_for_peer');
-        }
-        function showJoinScreen() {
-            resetAll();
-            appState = 'joining';
-            showScreen(screenJoin);
-            roomCodeInput.value = '';
-            roomCodeInput.focus();
-            joinStatus.classList.add('hidden');
-            applyLanguage();
-        }
-        function goBackToIdle() { resetAll(); }
-        function joinRoom() {
-            const inputCode = roomCodeInput.value.trim().toUpperCase();
-            if (!inputCode || inputCode.length < 3) { showAlert(t('room_not_found'), 'warning'); return; }
-            roomId = inputCode;
-            isHost = false;
-            appState = 'room';
-            showScreen(screenRoom);
-            roomInfoLabel.textContent = t('connected_to_room');
-            roomCodeDisplay.textContent = roomId;
-            updateSendStatus('connecting', 'connecting_room');
-            cleanupPeer();
-            // 生成随机peer ID
-            myPeerId = null;
-            peer = new Peer({
-                host: PEER_SERVER.host,
-                port: PEER_SERVER.port,
-                secure: PEER_SERVER.secure,
-                debug: 0,
-            });
-            peer.on('open', (id) => {
-                myPeerId = id;
-                const conn = peer.connect(roomId, { reliable: true, serialization: 'binary' });
-                setupConnection(conn);
-            });
-            peer.on('error', (err) => {
-                if (err.type === 'peer-unavailable') { showAlert(t('room_not_found'), 'error'); updateSendStatus('error', 'join_status_error'); }
-                else if (err.type === 'network' || err.type === 'server-error') showAlert(t('network_error'), 'error');
-            });
-            peer.on('disconnected', () => { if (!transferComplete && peer && !peer.destroyed) peer.reconnect(); });
-        }
-        function initPeer(peerId) {
-            cleanupPeer();
-            peer = new Peer(peerId, {
-                host: PEER_SERVER.host,
-                port: PEER_SERVER.port,
-                secure: PEER_SERVER.secure,
-                debug: 0,
-            });
-            peer.on('open', (id) => { myPeerId = id; });
-            peer.on('connection', (conn) => { setupConnection(conn); });
-            peer.on('error', (err) => {
-                if (err.type === 'unavailable-id') {
-                    roomId = generateRoomId();
-                    roomCodeDisplay.textContent = roomId;
-                    initPeer(roomId);
-                    showAlert(t('room_conflict'), 'warning');
-                } else if (err.type === 'peer-unavailable') { showAlert(t('room_not_found'), 'error'); }
-                else if (err.type === 'network' || err.type === 'server-error') showAlert(t('network_error'), 'error');
-            });
-            peer.on('disconnected', () => { if (!transferComplete && peer && !peer.destroyed) peer.reconnect(); });
-        }
-
-        // ============ 事件绑定 ============
-        document.getElementById('btnCreate').addEventListener('click', createRoom);
-        document.getElementById('btnJoin').addEventListener('click', showJoinScreen);
-        document.getElementById('btnBack').addEventListener('click', goBackToIdle);
-        document.getElementById('btnJoinConfirm').addEventListener('click', joinRoom);
-        document.getElementById('btnRestart').addEventListener('click', resetAll);
-        document.getElementById('btnCopyRoom').addEventListener('click', copyRoomCode);
-        document.getElementById('btnShareLink').addEventListener('click', shareRoomLink);
-
-        fileInput.addEventListener('change', function() { handleFileSelection(Array.from(this.files)); });
-        dropZone.addEventListener('dragover', function(e) { e.preventDefault(); this.classList.add('drag-over'); });
-        dropZone.addEventListener('dragleave', function(e) { e.preventDefault(); this.classList.remove('drag-over'); });
-        dropZone.addEventListener('drop', function(e) {
-            e.preventDefault();
-            this.classList.remove('drag-over');
-            if (e.dataTransfer.files.length > 0) handleFileSelection(Array.from(e.dataTransfer.files));
-        });
-
-        function handleFileSelection(files) {
-            if (appState !== 'room') return;
-            selectedFiles = files;
-            renderFileList();
-            if (selectedFiles.length > 0 && Object.keys(conns).length > 0) startSendingFiles();
-            else if (selectedFiles.length > 0) showAlert('尚无成员连接', 'warning');
-        }
-        function renderFileList() {
-            fileList.innerHTML = '';
-            if (selectedFiles.length === 0) { fileList.classList.add('hidden'); return; }
-            fileList.classList.remove('hidden');
-            selectedFiles.forEach((f, i) => {
-                const li = document.createElement('li');
-                li.innerHTML = `<span class="file-icon">${getFileIcon(f.name)}</span><div class="file-info"><div class="file-name">${escapeHtml(f.name)}</div><div class="file-size">${formatSize(f.size)}</div></div><button class="file-remove" data-index="${i}" title="${t('remove_file')}">×</button>`;
-                fileList.appendChild(li);
-            });
-            fileList.querySelectorAll('.file-remove').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const index = parseInt(this.getAttribute('data-index'));
-                    selectedFiles.splice(index, 1);
-                    renderFileList();
-                    fileInput.value = '';
-                });
-            });
-        }
-        function copyRoomCode() {
-            if (!roomId) return;
-            navigator.clipboard.writeText(roomId).then(() => {
-                btnCopyRoom.classList.add('copied');
-                setTimeout(() => btnCopyRoom.classList.remove('copied'), 1800);
-            }).catch(() => {
-                const input = document.createElement('input');
-                input.value = roomId;
-                document.body.appendChild(input);
-                input.select();
-                document.execCommand('copy');
-                document.body.removeChild(input);
-                btnCopyRoom.classList.add('copied');
-                setTimeout(() => btnCopyRoom.classList.remove('copied'), 1800);
-            });
-        }
-        function shareRoomLink() {
-            const link = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
-            navigator.clipboard.writeText(link).then(() => showAlert(t('copy_success'), 'success')).catch(() => {
-                const input = document.createElement('input');
-                input.value = link;
-                document.body.appendChild(input);
-                input.select();
-                document.execCommand('copy');
-                document.body.removeChild(input);
-                showAlert(t('link_copied'), 'success');
-            });
-        }
-
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && appState === 'joining' && roomCodeInput.value.trim().length >= 3) joinRoom();
-        });
-        window.addEventListener('beforeunload', cleanupPeer);
-
-        // ============ 初始化 ============
-        applyLanguage();
-        showScreen(screenIdle);
     </script>
 </body>
 </html>
