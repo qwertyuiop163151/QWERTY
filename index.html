@@ -34,6 +34,11 @@
         .settings-content{background:var(--card);border-radius:16px;padding:20px;max-width:480px;width:90%;max-height:70vh;overflow-y:auto;border:1px solid var(--border);margin:20px;position:relative;z-index:1;-webkit-overflow-scrolling:touch}
         .settings-content h2{color:var(--primary);margin-bottom:8px}
         .disclaimer{margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:.8rem;color:#666}.center{text-align:center;font-weight:600;margin-top:8px}
+        /* Bug栏样式 */
+        .bug-section{margin-top:16px;padding-top:16px;border-top:1px solid var(--border);font-size:.9rem}
+        .bug-section h3{color:#e67e22;margin-bottom:8px;font-size:1rem}
+        .bug-section p{margin-bottom:6px;line-height:1.5}
+        .bug-section strong{color:var(--text)}
         #aiAssistant{position:fixed;bottom:16px;right:16px;z-index:999}
         .ai-btn{width:50px;height:50px;border-radius:50%;background:var(--primary);color:#fff;border:none;font-size:24px;cursor:pointer}
         .ai-window{width:260px;background:var(--card);border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.2);margin-bottom:8px;display:none;border:1px solid var(--border);position:relative}
@@ -69,6 +74,13 @@
             <h3 data-i18n="about_adv_title"></h3>
             <ul style="margin-left:16px"><li data-i18n="about_adv1"></li><li data-i18n="about_adv2"></li><li data-i18n="about_adv3"></li><li data-i18n="about_adv4"></li><li data-i18n="about_adv5"></li><li data-i18n="about_adv6"></li></ul>
             <div class="disclaimer"><strong data-i18n="about_disc_title"></strong> <span data-i18n="about_disc_text"></span><div class="center" data-i18n="about_tw"></div></div>
+            <!-- 新增Bug栏 -->
+            <div class="bug-section">
+                <h3>🐞 Bug栏</h3>
+                <p><strong>问题：</strong>手机端打开AI助手时，会因为对话框长度过长，导致无法摁到发送键</p>
+                <p><strong>解决方法：</strong>目前暂无</p>
+                <p><strong>代替方案：</strong>用回车键代替发送</p>
+            </div>
         </div>
     </div>
 
