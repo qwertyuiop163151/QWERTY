@@ -7,8 +7,24 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='%234f6ef7' d='M1.5 2A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-7A1.5 1.5 0 0 0 14.5 4H8L6.5 2z'/></svg>">
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        :root{--bg:#f0f2f5;--card:#fff;--primary:#4f6ef7;--text:#1a1a2e;--border:#e2e6f0;--shadow:0 8px 30px rgba(0,0,0,.08)}
-        html[data-theme="dark"]{--bg:#111827;--card:#1f2937;--primary:#818cf8;--text:#f1f5f9;--border:#334155;--shadow:0 8px 30px rgba(0,0,0,.4)}
+        :root{
+            --bg:#f0f2f5;
+            --card:#fff;
+            --primary:#4f6ef7;
+            --text:#1a1a2e;
+            --border:#e2e6f0;
+            --shadow:0 8px 30px rgba(0,0,0,.08);
+            --ai-msg-bg:#f0f0f0;
+        }
+        html[data-theme="dark"]{
+            --bg:#111827;
+            --card:#1f2937;
+            --primary:#818cf8;
+            --text:#f1f5f9;
+            --border:#334155;
+            --shadow:0 8px 30px rgba(0,0,0,.4);
+            --ai-msg-bg:#374151;
+        }
         *{margin:0;padding:0;box-sizing:border-box}
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;color:var(--text);transition:background .3s}
         .card{background:var(--card);border-radius:16px;padding:24px;max-width:560px;width:100%;box-shadow:var(--shadow);border:1px solid var(--border)}
@@ -34,7 +50,7 @@
         .disclaimer{margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:.8rem;color:#666}.center{text-align:center;font-weight:600;margin-top:8px}
         #aiAssistant{position:fixed;bottom:16px;right:16px;z-index:999}.ai-btn{width:50px;height:50px;border-radius:50%;background:var(--primary);color:#fff;border:none;font-size:24px;cursor:pointer}
         .ai-window{width:260px;background:var(--card);border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.2);margin-bottom:8px;display:none;border:1px solid var(--border)}.ai-header{background:var(--primary);color:#fff;padding:8px 12px;font-weight:600;font-size:.85rem}
-        .ai-messages{height:150px;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px}.msg{padding:6px 10px;border-radius:10px;max-width:85%;font-size:.8rem;word-break:break-word}.msg.user{background:var(--primary);color:#fff;align-self:flex-end}.msg.assistant{background:#f0f0f0;color:var(--text);align-self:flex-start}
+        .ai-messages{height:150px;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px}.msg{padding:6px 10px;border-radius:10px;max-width:85%;font-size:.8rem;word-break:break-word}.msg.user{background:var(--primary);color:#fff;align-self:flex-end}.msg.assistant{background:var(--ai-msg-bg);color:var(--text);align-self:flex-start}
         .ai-input-area{display:flex;padding:6px;border-top:1px solid var(--border)}.ai-input{flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:16px;background:var(--card);color:var(--text);font-size:.8rem}.ai-send{background:var(--primary);color:#fff;border:none;border-radius:50%;width:30px;height:30px;margin-left:6px;cursor:pointer}
     </style>
 </head>
