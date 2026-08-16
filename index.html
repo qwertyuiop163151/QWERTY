@@ -235,7 +235,9 @@
         // AI 助手
         const aiWin = $('#aiWindow');
         $('#aiToggleBtn').onclick = () => aiWin.style.display = aiWin.style.display === 'block' ? 'none' : 'block';
-        $('#aiSendBtn').onclick = () => {
+
+        // 封装发送逻辑
+        const sendAiMessage = () => {
             const q = $('#aiInput').value.trim();
             if (!q) return;
             const msgs = $('#aiMessages');
@@ -258,6 +260,17 @@
                 msgs.scrollTop = msgs.scrollHeight;
             }, 300);
         };
+
+        // 发送按钮点击事件
+        $('#aiSendBtn').onclick = sendAiMessage;
+
+        // 回车发送（处理中文输入法组合状态）
+        $('#aiInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) {
+                e.preventDefault();
+                sendAiMessage();
+            }
+        });
 
         // 现代模式
         let peer, conns = {}, myId, roomId, isHost, appState = 'idle', selectedFiles = [], sharedFiles = [], receiving = {}, totalSent = 0, totalToSend = 0, sendStatusObj = null;
